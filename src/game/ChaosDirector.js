@@ -143,8 +143,7 @@ export class ChaosDirector {
               (vehicle.halfWidth ?? 0.5) +
               0.45 -
               Math.abs(baseLane - this.barrier.x);
-          targetLane +=
-            vehicle.direction * Math.max(0, clearance) * envelope;
+          targetLane += vehicle.direction * Math.max(0, clearance) * envelope;
         }
       }
       vehicle.lane +=
