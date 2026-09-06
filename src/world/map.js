@@ -259,8 +259,12 @@ function legacyTrafficPose(vehicle, time) {
 }
 
 export function trafficPose(vehicle, time) {
-  // Preserve old diagnostic fixtures that hand-author the former block-loop fields.
-  if (!vehicle.axis) legacyTrafficPose(vehicle, time);
+  // Diagnostic fixtures predate straight streams and still hand-author left/top.
+  // Honour those explicit fixture fields even if the object was cloned from a
+  // modern traffic vehicle that also carries an axis property.
+  const hasLegacyRoute =
+    Number.isFinite(vehicle.left) && Number.isFinite(vehicle.top);
+  if (hasLegacyRoute || !vehicle.axis) legacyTrafficPose(vehicle, time);
   else {
     const travel =
       TRAFFIC_MIN +
