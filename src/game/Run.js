@@ -259,7 +259,9 @@ export class Run {
       let avoidTarget = 0;
       if (v.axis && p.speed < 4 && p.recovery === 0) {
         const travel = v.axis === "x" ? v.x : v.z;
-        const inJunction = AVENUES.some((road) => Math.abs(travel - road) < 8);
+        const inJunction = AVENUES.some(
+          (road) => Math.abs(travel - road) < 8,
+        );
         if (!inJunction) {
           const dx = p.x - v.x,
             dz = p.z - v.z,
@@ -269,7 +271,11 @@ export class Run {
             lateral = dx * sideX + dz * sideZ;
           if (ahead > -1 && ahead < 9 && Math.abs(lateral) < 2.4) {
             const maxOffset =
-              v.kind === "car" ? 0.55 : v.kind === "delivery" ? 0.8 : 1.05;
+              v.kind === "car"
+                ? 0.55
+                : v.kind === "delivery"
+                  ? 0.8
+                  : 1.05;
             const urgency = clamp((9 - Math.max(0, ahead)) / 9, 0, 1);
             const side =
               Math.abs(lateral) > 0.2
