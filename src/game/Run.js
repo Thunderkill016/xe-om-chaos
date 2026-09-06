@@ -60,7 +60,8 @@ export class Run {
     this.director = new ChaosDirector(seed);
     this.traffic = makeTraffic(
       random(seed + ":traffic"),
-      CONFIG.trafficCount + CONFIG.rushCount,
+      CONFIG.trafficCount,
+      CONFIG.rushCount,
     );
     this.events = [];
     this.moments = [];
@@ -86,14 +87,11 @@ export class Run {
     this.reactionCooldown = 0;
     this.traffic.forEach((v) => {
       trafficPose(v, 0);
-      // A deterministic clear start gives new players time to learn throttle and brake.
-      while (
-        distance(v, this.player) < 18 ||
-        distance(v, this.missions.pickup) < 9
-      ) {
-        v.phase = (v.phase + 32) % 288;
-        trafficPose(v, 0);
-      }
+      // Preserve stream spacing. Vehicles that would start on top of the rider or pickup
+      // remain temporarily inactive instead of being individually re-phased into another car.
+      v.spawnBlocked =
+        distance(v, this.player) < 18 || distance(v, this.missions.pickup) < 9;
+      v.active = v.id < CONFIG.trafficCount && !v.spawnBlocked;
     });
     this.player.immune = 3;
   }
@@ -167,6 +165,7 @@ export class Run {
       let replies = 0;
       for (const vehicle of this.traffic)
         if (vehicle.active && distance(p, vehicle) < 17) {
+          vehicle.honkedAt = this.time;
           vehicle.honkedUntil = this.time + 1.4;
           replies++;
         }
@@ -226,8 +225,15 @@ export class Run {
     }
     this.stats.maxSpeed = Math.max(this.stats.maxSpeed, p.speed);
     for (const v of this.traffic) {
-      v.active = v.id < CONFIG.trafficCount || this.rush;
       trafficPose(v, this.time);
+      const enabled = v.id < CONFIG.trafficCount || this.rush;
+      if (
+        v.spawnBlocked &&
+        distance(v, p) > 18 &&
+        distance(v, this.missions.pickup) > 9
+      )
+        v.spawnBlocked = false;
+      v.active = enabled && !v.spawnBlocked;
       if (!v.active) continue;
       const d = distance(v, p);
       if (d < CONFIG.radius + v.radius && p.immune === 0 && p.speed > 3) {
