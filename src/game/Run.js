@@ -1,5 +1,6 @@
 import { CONFIG, clamp, random, distance } from "./config.js";
 import {
+  AVENUES,
   surface,
   collisionSurface,
   makeTraffic,
@@ -228,6 +229,17 @@ export class Run {
     this.stats.maxSpeed = Math.max(this.stats.maxSpeed, p.speed);
     for (const v of this.traffic) {
       trafficPose(v, this.time);
+      const sideX = Math.cos(v.angle),
+        sideZ = -Math.sin(v.angle),
+        previousAvoid = v.avoidOffset ?? 0;
+      // trafficPose owns the base stream path. Reapply the persistent lateral
+      // offset before deciding this frame's target so NPCs do not snap back to
+      // lane centre every tick.
+      if (previousAvoid) {
+        v.x += sideX * previousAvoid;
+        v.z += sideZ * previousAvoid;
+      }
+
       const enabled = v.id < CONFIG.trafficCount || this.rush;
       if (
         v.spawnBlocked &&
@@ -236,29 +248,43 @@ export class Run {
       )
         v.spawnBlocked = false;
       v.active = enabled && !v.spawnBlocked;
-      if (!v.active) continue;
+      if (!v.active) {
+        v.avoidOffset = 0;
+        continue;
+      }
 
-      // A stopped xe ôm should not be visibly driven through by scripted traffic.
-      // Straight-stream NPCs make a small deterministic sidestep when the rider is
-      // ahead and nearly stationary. Moving riders still have to avoid traffic.
+      // Keep normal traffic disciplined. Only a nearly-stopped rider can make a
+      // nearby NPC flow around them, and never while the NPC is inside a junction
+      // core. The offset eases in and out instead of teleporting sideways.
+      let avoidTarget = 0;
       if (v.axis && p.speed < 4 && p.recovery === 0) {
-        const dx = p.x - v.x,
-          dz = p.z - v.z,
-          forwardX = Math.sin(v.angle),
-          forwardZ = Math.cos(v.angle),
-          sideX = Math.cos(v.angle),
-          sideZ = -Math.sin(v.angle),
-          ahead = dx * forwardX + dz * forwardZ,
-          lateral = dx * sideX + dz * sideZ;
-        if (ahead > -1 && ahead < 8 && Math.abs(lateral) < 2.2) {
-          const strength =
-            (1 - Math.max(0, ahead) / 8) * (v.kind === "car" ? 0.85 : 1.05);
-          const side =
-            Math.abs(lateral) > 0.15 ? -Math.sign(lateral) : v.id % 2 ? 1 : -1;
-          v.x += sideX * strength * side;
-          v.z += sideZ * strength * side;
+        const travel = v.axis === "x" ? v.x : v.z;
+        const inJunction = AVENUES.some((road) => Math.abs(travel - road) < 8);
+        if (!inJunction) {
+          const dx = p.x - v.x,
+            dz = p.z - v.z,
+            forwardX = Math.sin(v.angle),
+            forwardZ = Math.cos(v.angle),
+            ahead = dx * forwardX + dz * forwardZ,
+            lateral = dx * sideX + dz * sideZ;
+          if (ahead > -1 && ahead < 9 && Math.abs(lateral) < 2.4) {
+            const maxOffset =
+              v.kind === "car" ? 0.55 : v.kind === "delivery" ? 0.8 : 1.05;
+            const urgency = clamp((9 - Math.max(0, ahead)) / 9, 0, 1);
+            const side =
+              Math.abs(lateral) > 0.2 ? -Math.sign(lateral) : v.id % 2 ? 1 : -1;
+            avoidTarget = maxOffset * urgency * side;
+          }
         }
       }
+      const avoidRate = avoidTarget === 0 ? 3 : 5;
+      const nextAvoid =
+        previousAvoid +
+        (avoidTarget - previousAvoid) * Math.min(1, dt * avoidRate);
+      const avoidDelta = nextAvoid - previousAvoid;
+      v.avoidOffset = Math.abs(nextAvoid) < 0.001 ? 0 : nextAvoid;
+      v.x += sideX * avoidDelta;
+      v.z += sideZ * avoidDelta;
 
       const clearance = vehicleClearance(v, p);
       if (clearance < CONFIG.radius && p.immune === 0) {
