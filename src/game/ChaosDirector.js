@@ -1,4 +1,4 @@
-import { random, distance, CONFIG } from "./config.js";
+import { random, distance, clamp, CONFIG } from "./config.js";
 
 export const CHAOS = [
   {
@@ -111,8 +111,46 @@ export class ChaosDirector {
         }
     }
     const wanted = this.active.has("block");
+    const trafficClear = !run.traffic.some(
+      (vehicle) =>
+        vehicle.active &&
+        vehicle.axis === "z" &&
+        vehicle.road === this.barrier.x &&
+        Math.abs(vehicle.z - this.barrier.z) < 12,
+    );
+    // Do not materialize a roadblock under the rider or through an NPC. Once a
+    // clean gap arrives, central traffic has enough approach distance to bend
+    // around the outside edges rather than ghosting through the barrier.
     this.barrier.active =
-      wanted && (this.barrier.active || distance(p, this.barrier) > 9);
+      wanted &&
+      (this.barrier.active || (distance(p, this.barrier) > 9 && trafficClear));
+
+    // The roadblock sits across both lanes of the central north/south avenue.
+    // Preserve longitudinal cadence and move each direction toward its own curb;
+    // this avoids introducing braking queues that would destroy junction timing.
+    for (const vehicle of run.traffic) {
+      if (vehicle.axis !== "z" || vehicle.road !== this.barrier.x) continue;
+      const baseLane = vehicle.road + vehicle.direction * 2.75;
+      let targetLane = baseLane;
+      if (this.barrier.active) {
+        const toBarrier = (this.barrier.z - vehicle.z) * vehicle.direction;
+        if (toBarrier < 18 && toBarrier > -10) {
+          const approach = clamp((18 - toBarrier) / 8, 0, 1),
+            departure = clamp((toBarrier + 10) / 6, 0, 1),
+            envelope = Math.min(approach, departure),
+            clearance =
+              this.barrier.w / 2 +
+              (vehicle.halfWidth ?? 0.5) +
+              0.45 -
+              Math.abs(baseLane - this.barrier.x);
+          targetLane +=
+            vehicle.direction * Math.max(0, clearance) * envelope;
+        }
+      }
+      vehicle.lane +=
+        (targetLane - vehicle.lane) * Math.min(1, CONFIG.step * 8);
+    }
+
     const busEvent = this.schedule.find((e) => e.id === "bus");
     if (!busEvent) throw new Error("Chaos schedule requires a bus event");
     this.bus.active = this.active.has("bus");
