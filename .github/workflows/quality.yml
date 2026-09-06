@@ -21,4 +21,9 @@ jobs:
       - name: Opening route diagnostic
         run: |
           node --input-type=module -e 'import { driveOpeningRoute } from "./scripts/evaluate-routes.mjs"; const { run, measurement } = driveOpeningRoute("2026-09-06", "hem26"); console.log(JSON.stringify({ measurement, crashes: run.moments.filter((m) => m.type === "crash") }, null, 2));'
+      - name: Prettier diagnostic
+        run: |
+          npm run format
+          git diff -- src/game/Run.js src/world/map.js
+          git diff --exit-code -- src/game/Run.js src/world/map.js
       - run: npm run quality
