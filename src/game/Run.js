@@ -250,8 +250,14 @@ export class Run {
           ahead = dx * forwardX + dz * forwardZ,
           lateral = dx * sideX + dz * sideZ;
         if (ahead > -1 && ahead < 8 && Math.abs(lateral) < 2.2) {
-          const strength = (1 - Math.max(0, ahead) / 8) * (v.kind === "car" ? 0.85 : 1.05);
-          const side = Math.abs(lateral) > 0.15 ? -Math.sign(lateral) : v.id % 2 ? 1 : -1;
+          const strength =
+            (1 - Math.max(0, ahead) / 8) * (v.kind === "car" ? 0.85 : 1.05);
+          const side =
+            Math.abs(lateral) > 0.15
+              ? -Math.sign(lateral)
+              : v.id % 2
+                ? 1
+                : -1;
           v.x += sideX * strength * side;
           v.z += sideZ * strength * side;
         }
@@ -275,7 +281,9 @@ export class Run {
             (v.x - p.x) * Math.cos(p.angle) - (v.z - p.z) * Math.sin(p.angle),
           );
         v.closest = Math.min(v.closest, clearance);
-      } else if (v.near && clearance > CONFIG.nearMissRadius + 1) {
+      } else if (v.near && clearance > CONFIG.nearMissRadius) {
+        // The cooldown already prevents jitter-farming. End the manoeuvre as soon
+        // as the rider has genuinely cleared the same geometric near-miss zone.
         if (p.immune === 0) {
           this.stats.nearMisses++;
           this.missions.rideNear++;
