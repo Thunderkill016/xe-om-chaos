@@ -179,8 +179,9 @@ function streamLayout(stream) {
     axis: vertical ? "z" : "x",
     road,
     direction,
-    // Right-hand road placement from the vehicle's point of view.
-    lane: vertical ? road - direction * 2.75 : road + direction * 2.75,
+    // Coordinates use +x east and +z north. Keep traffic on the right-hand
+    // side of its direction of travel: north/east use +x/-z respectively.
+    lane: vertical ? road + direction * 2.75 : road - direction * 2.75,
   };
 }
 
@@ -237,8 +238,10 @@ export function makeTraffic(rng, regularCount, rushCount = 0) {
   });
 }
 
-function legacyTrafficPose(vehicle, time) {
-  const lane = vehicle.lane ?? 2.8 * vehicle.direction;
+function legacyTrafficPose(vehicle, time, explicitLegacy = false) {
+  const lane = explicitLegacy
+    ? 2.8 * vehicle.direction
+    : (vehicle.lane ?? 2.8 * vehicle.direction);
   const side = vehicle.sideLength ?? 72 - 2 * lane;
   const period = vehicle.phasePeriod ?? side * 4;
   const left = vehicle.left,
@@ -261,10 +264,11 @@ function legacyTrafficPose(vehicle, time) {
 export function trafficPose(vehicle, time) {
   // Diagnostic fixtures predate straight streams and still hand-author left/top.
   // Honour those explicit fixture fields even if the object was cloned from a
-  // modern traffic vehicle that also carries an axis property.
+  // modern traffic vehicle that also carries an axis/lane property.
   const hasLegacyRoute =
     Number.isFinite(vehicle.left) && Number.isFinite(vehicle.top);
-  if (hasLegacyRoute || !vehicle.axis) legacyTrafficPose(vehicle, time);
+  if (hasLegacyRoute || !vehicle.axis)
+    legacyTrafficPose(vehicle, time, hasLegacyRoute);
   else {
     const travel =
       TRAFFIC_MIN +
