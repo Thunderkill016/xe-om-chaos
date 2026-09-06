@@ -308,7 +308,14 @@ test("close encounter scores only after safe exit; collision cannot score a near
   }
   assert.equal(r.stats.nearMisses, 1);
   v.lastNear = -100;
-  Object.assign(r.player, { x: 25, z: 2.8, speed: 12, immune: 0 });
+  Object.assign(r.player, {
+    x: v.x,
+    z: v.z,
+    speed: 12,
+    vx: 0,
+    vz: 0,
+    immune: 0,
+  });
   r.step({ ...EMPTY_INPUT, throttle: true });
   assert.equal(r.stats.crashes, 1);
   assert.equal(r.stats.nearMisses, 1);
