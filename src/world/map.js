@@ -89,13 +89,25 @@ export function makeTraffic(rng, count) {
       top = -72 + row * 72;
     const direction = rng() > 0.3 ? 1 : -1;
     const kind = id % 11 === 0 ? "car" : id % 7 === 0 ? "delivery" : "bike";
+    // Two same-direction bands make traffic read as a flow with changing gaps instead of
+    // a single file of isolated obstacles. Bikes get a small, smooth wander inside their band.
+    const laneBand = rng() > 0.52 ? 1 : 0;
+    const baseSpeed =
+      kind === "car"
+        ? 4.5 + rng() * 2.5
+        : kind === "delivery"
+          ? 5.2 + rng() * 3.4
+          : 6 + rng() * 5;
     return {
       id,
       left,
       top,
       direction,
+      laneBand,
+      lanePhase: rng() * Math.PI * 2,
+      laneWander: kind === "bike" ? 0.18 + rng() * 0.18 : 0,
       phase: rng() * 288,
-      speed: 5 + rng() * 6,
+      speed: baseSpeed + laneBand * 0.8,
       kind,
       x: 0,
       z: 0,
@@ -115,9 +127,18 @@ export function trafficPose(vehicle, time) {
   const p =
     (((vehicle.phase + time * vehicle.speed * vehicle.direction) % 288) + 288) %
     288;
+  const band = vehicle.laneBand ?? 0;
+  const wander =
+    vehicle.kind === "bike"
+      ? Math.sin(time * 0.72 + (vehicle.lanePhase ?? 0)) *
+        (vehicle.laneWander ?? 0)
+      : 0;
+  // A horn response nudges a vehicle within its own half of the road; it never jumps
+  // across the centre line or outside the road boundary.
+  const hornNudge =
+    vehicle.honkedUntil > time ? (band === 0 ? 0.55 : -0.55) : 0;
   const lane =
-    2.8 * vehicle.direction +
-    (vehicle.honkedUntil > time ? 1.2 * vehicle.direction : 0);
+    vehicle.direction * (2.15 + band * 2.25 + wander + hornNudge);
   if (p < 72) {
     vehicle.x = vehicle.left + p;
     vehicle.z = vehicle.top + lane;
