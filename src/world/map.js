@@ -295,8 +295,8 @@ export function trafficPose(vehicle, time) {
 }
 
 // Circle-vs-oriented-box clearance. Negative means the point lies inside the
-// traffic body's footprint. It matches the visible car/bike proportions much
-// better than the old single radius for every direction.
+// traffic body's footprint. Derive the footprint from kind at collision time so
+// the visual vehicle class and the collision class cannot silently diverge.
 export function vehicleClearance(vehicle, point) {
   const dx = point.x - vehicle.x,
     dz = point.z - vehicle.z;
@@ -306,8 +306,7 @@ export function vehicleClearance(vehicle, point) {
     forwardZ = Math.cos(vehicle.angle);
   const lateral = dx * sideX + dz * sideZ,
     longitudinal = dx * forwardX + dz * forwardZ;
-  const halfWidth = vehicle.halfWidth ?? (vehicle.kind === "car" ? 1.05 : 0.46),
-    halfLength = vehicle.halfLength ?? (vehicle.kind === "car" ? 1.8 : 1.18);
+  const { halfWidth, halfLength } = vehicleShape(vehicle.kind);
   const ox = Math.abs(lateral) - halfWidth,
     oz = Math.abs(longitudinal) - halfLength;
   if (ox <= 0 && oz <= 0) return Math.max(ox, oz);
