@@ -4,6 +4,7 @@ import {
   makeTraffic,
   trafficPose,
   hiddenLaneAt,
+  vehicleClearance,
 } from "../world/map.js";
 import { Missions } from "./Missions.js";
 import { ChaosDirector } from "./ChaosDirector.js";
@@ -235,25 +236,46 @@ export class Run {
         v.spawnBlocked = false;
       v.active = enabled && !v.spawnBlocked;
       if (!v.active) continue;
-      const d = distance(v, p);
-      if (d < CONFIG.radius + v.radius && p.immune === 0 && p.speed > 3) {
+
+      // A stopped xe ôm should not be visibly driven through by scripted traffic.
+      // Straight-stream NPCs make a small deterministic sidestep when the rider is
+      // ahead and nearly stationary. Moving riders still have to avoid traffic.
+      if (v.axis && p.speed < 4 && p.recovery === 0) {
+        const dx = p.x - v.x,
+          dz = p.z - v.z,
+          forwardX = Math.sin(v.angle),
+          forwardZ = Math.cos(v.angle),
+          sideX = Math.cos(v.angle),
+          sideZ = -Math.sin(v.angle),
+          ahead = dx * forwardX + dz * forwardZ,
+          lateral = dx * sideX + dz * sideZ;
+        if (ahead > -1 && ahead < 8 && Math.abs(lateral) < 2.2) {
+          const strength = (1 - Math.max(0, ahead) / 8) * (v.kind === "car" ? 0.85 : 1.05);
+          const side = Math.abs(lateral) > 0.15 ? -Math.sign(lateral) : v.id % 2 ? 1 : -1;
+          v.x += sideX * strength * side;
+          v.z += sideZ * strength * side;
+        }
+      }
+
+      const clearance = vehicleClearance(v, p);
+      if (clearance < CONFIG.radius && p.immune === 0) {
         this.crash();
         v.near = false;
         v.closest = Infinity;
         v.lastNear = this.time;
       } else if (
-        d < CONFIG.nearMissRadius + v.radius &&
+        clearance < CONFIG.nearMissRadius &&
         p.speed > CONFIG.nearMissSpeed &&
         p.immune === 0 &&
         this.time - v.lastNear > CONFIG.nearMissCooldown
       ) {
         v.near = true;
-        if (d < v.closest)
+        if (clearance < v.closest)
           v.nearSide = Math.sign(
             (v.x - p.x) * Math.cos(p.angle) - (v.z - p.z) * Math.sin(p.angle),
           );
-        v.closest = Math.min(v.closest, d);
-      } else if (v.near && d > CONFIG.nearMissRadius + v.radius + 1) {
+        v.closest = Math.min(v.closest, clearance);
+      } else if (v.near && clearance > CONFIG.nearMissRadius + 1) {
         if (p.immune === 0) {
           this.stats.nearMisses++;
           this.missions.rideNear++;
