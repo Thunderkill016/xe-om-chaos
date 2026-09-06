@@ -62,11 +62,16 @@ export const STOPS = [
 // every centimetre outside a painted road as an invisible wall.
 const BLOCK_STARTS = [-65, -33, 7, 39];
 export const BUILDING_RECTS = [];
+export const VISIBLE_LOT_RECTS = [];
 for (let ix = 0; ix < BLOCK_STARTS.length; ix++)
   for (let iz = 0; iz < BLOCK_STARTS.length; iz++) {
     const x0 = BLOCK_STARTS[ix],
       z0 = BLOCK_STARTS[iz];
     if (x0 === 7 && z0 === -33) continue;
+    // City.js renders this exact 26x26 paved slab beneath each ordinary block.
+    // Collision uses the same footprint so an apparently open courtyard is not
+    // an invisible wall just because it is outside a named road corridor.
+    VISIBLE_LOT_RECTS.push({ x: x0 + 13, z: z0 + 13, w: 26, d: 26 });
     for (let n = 0; n < 3; n++) {
       const x =
           x0 +
@@ -90,12 +95,24 @@ BUILDING_RECTS.push(
   { x: -53, z: 52, w: 22, d: 20 },
 );
 
+function rectAt(rects, x, z, margin = 0) {
+  return rects.find(
+    (rect) =>
+      Math.abs(x - rect.x) < rect.w / 2 - margin &&
+      Math.abs(z - rect.z) < rect.d / 2 - margin,
+  );
+}
+
 export function buildingAt(x, z, margin = 0) {
   return BUILDING_RECTS.find(
     (rect) =>
       Math.abs(x - rect.x) < rect.w / 2 + margin &&
       Math.abs(z - rect.z) < rect.d / 2 + margin,
   );
+}
+
+export function visibleLotAt(x, z, margin = 0) {
+  return rectAt(VISIBLE_LOT_RECTS, x, z, margin);
 }
 
 export function surface(x, z, margin = 0) {
@@ -143,6 +160,19 @@ export function surface(x, z, margin = 0) {
   )
     return "ground";
 
+  return "wall";
+}
+
+// Collision truth is slightly broader than route semantics. `surface()` keeps
+// unnamed courtyards out of alley/road gameplay logic, while this query lets the
+// bike use the paved slabs the renderer visibly presents as open space.
+export function collisionSurface(x, z, margin = 0) {
+  const semantic = surface(x, z, margin);
+  if (semantic !== "wall") return semantic;
+  if (Math.abs(x) > EXTENT - margin || Math.abs(z) > EXTENT - margin)
+    return "wall";
+  if (buildingAt(x, z, margin)) return "wall";
+  if (visibleLotAt(x, z, margin)) return "ground";
   return "wall";
 }
 
