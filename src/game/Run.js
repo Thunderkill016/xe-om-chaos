@@ -253,11 +253,7 @@ export class Run {
           const strength =
             (1 - Math.max(0, ahead) / 8) * (v.kind === "car" ? 0.85 : 1.05);
           const side =
-            Math.abs(lateral) > 0.15
-              ? -Math.sign(lateral)
-              : v.id % 2
-                ? 1
-                : -1;
+            Math.abs(lateral) > 0.15 ? -Math.sign(lateral) : v.id % 2 ? 1 : -1;
           v.x += sideX * strength * side;
           v.z += sideZ * strength * side;
         }
