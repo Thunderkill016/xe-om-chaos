@@ -1,5 +1,5 @@
 export const CONFIG = Object.freeze({
-  version: "saigon-v8",
+  version: "saigon-v9",
   step: 1 / 60,
   runSeconds: 180,
   acceleration: 15,
