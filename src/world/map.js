@@ -3,6 +3,9 @@ export const ALLEYS = [-36, 36];
 export const EXTENT = 89;
 export const ROAD_HALF = 7;
 export const ALLEY_HALF = 2.5;
+const SIDEWALK_HALF = 10.5;
+const ALLEY_SHOULDER_HALF = 4.6;
+
 // A hand-authored dogleg between two streets. Its courtyard replaces a building
 // lot; rendering and collision share this path so the shortcut is actually usable.
 export const HIDDEN_LANES = [
@@ -18,6 +21,7 @@ export const HIDDEN_LANES = [
     ],
   },
 ];
+
 export function segmentDistance(x, z, a, b) {
   const dx = b.x - a.x,
     dz = b.z - a.z;
@@ -27,6 +31,7 @@ export function segmentDistance(x, z, a, b) {
   );
   return Math.hypot(x - a.x - dx * t, z - a.z - dz * t);
 }
+
 export function hiddenLaneAt(x, z, margin = 0) {
   return HIDDEN_LANES.find((lane) =>
     lane.points
@@ -37,6 +42,7 @@ export function hiddenLaneAt(x, z, margin = 0) {
       ),
   );
 }
+
 export const STOPS = [
   // Board before the hẻm entrance so choosing it never requires a U-turn.
   { x: 3, z: -30, name: "CÀ PHÊ MÂY NHỎ" },
@@ -49,30 +55,97 @@ export const STOPS = [
   },
   { x: -3, z: 58, name: "CHUNG CƯ NẮNG" },
 ];
+
+// The city renderer uses the same deterministic block layout. These rectangles
+// represent the large visible masses that should actually stop the bike. Low
+// street furniture stays forgiving on purpose; the old implementation treated
+// every centimetre outside a painted road as an invisible wall.
+const BLOCK_STARTS = [-65, -33, 7, 39];
+export const BUILDING_RECTS = [];
+for (let ix = 0; ix < BLOCK_STARTS.length; ix++)
+  for (let iz = 0; iz < BLOCK_STARTS.length; iz++) {
+    const x0 = BLOCK_STARTS[ix],
+      z0 = BLOCK_STARTS[iz];
+    if (x0 === 7 && z0 === -33) continue;
+    for (let n = 0; n < 3; n++) {
+      const x =
+          x0 +
+          4.5 +
+          n * 8.4 +
+          (n === 0 && ix % 2 === 0 ? 1 : n === 2 && ix % 2 === 1 ? -1 : 0),
+        w =
+          n === 0 && ix % 2 === 0
+            ? 5.4
+            : n === 2 && ix % 2 === 1
+              ? 5.1
+              : [7.4, 8.1, 7.1][n];
+      BUILDING_RECTS.push({ x, z: z0 + 7, w, d: 8.8 });
+      BUILDING_RECTS.push({ x, z: z0 + 19, w, d: 8.5 });
+    }
+  }
+BUILDING_RECTS.push(
+  { x: 11.2, z: -30, w: 3.6, d: 6 },
+  { x: 26.5, z: -25, w: 13, d: 16 },
+  { x: 11.2, z: -13.5, w: 3.6, d: 13 },
+  { x: -53, z: 52, w: 22, d: 20 },
+);
+
+export function buildingAt(x, z, margin = 0) {
+  return BUILDING_RECTS.find(
+    (rect) =>
+      Math.abs(x - rect.x) < rect.w / 2 + margin &&
+      Math.abs(z - rect.z) < rect.d / 2 + margin,
+  );
+}
+
 export function surface(x, z, margin = 0) {
   if (Math.abs(x) > EXTENT - margin || Math.abs(z) > EXTENT - margin)
     return "wall";
-  if (
-    AVENUES.some(
-      (v) =>
-        Math.abs(x - v) < ROAD_HALF - margin ||
-        Math.abs(z - v) < ROAD_HALF - margin,
-    )
-  )
-    return "road";
-  if (
+  if (buildingAt(x, z, margin)) return "wall";
+
+  const avenue = AVENUES.some(
+    (v) =>
+      Math.abs(x - v) < ROAD_HALF - margin ||
+      Math.abs(z - v) < ROAD_HALF - margin,
+  );
+  if (avenue) return "road";
+
+  const alley =
     Math.abs(x) < 73 &&
     Math.abs(z) < 73 &&
     ALLEYS.some(
       (v) =>
         Math.abs(x - v) < ALLEY_HALF - margin ||
         Math.abs(z - v) < ALLEY_HALF - margin,
+    );
+  if (alley) return "alley";
+  if (hiddenLaneAt(x, z, margin)) return "alley";
+
+  // The visible curb/sidewalk apron is traversable. It is intentionally slower
+  // only through player judgement for now; most importantly it is no longer an
+  // invisible collision wall next to open pavement.
+  if (
+    AVENUES.some(
+      (v) =>
+        Math.abs(x - v) < SIDEWALK_HALF - margin ||
+        Math.abs(z - v) < SIDEWALK_HALF - margin,
     )
   )
-    return "alley";
-  if (hiddenLaneAt(x, z, margin)) return "alley";
+    return "ground";
+  if (
+    Math.abs(x) < 75 &&
+    Math.abs(z) < 75 &&
+    ALLEYS.some(
+      (v) =>
+        Math.abs(x - v) < ALLEY_SHOULDER_HALF - margin ||
+        Math.abs(z - v) < ALLEY_SHOULDER_HALF - margin,
+    )
+  )
+    return "ground";
+
   return "wall";
 }
+
 export function district(x, z) {
   if (x > 62) return "BẾN GIÓ";
   if (x < -20 && z > 15) return "CHỢ AN HÒA";
@@ -82,15 +155,20 @@ export function district(x, z) {
   return "ĐẠI LỘ SÀI GÒN";
 }
 
-// Twelve stable streams: two directions on each of the three horizontal and
-// three vertical avenues. Vehicles within one stream share pace and spacing, so
-// they cannot catch and stack into one another. This is intentionally simpler
-// than lane-changing AI while the core traffic interaction is being stabilized.
+// Twelve stable streams: two directions on each of three horizontal and three
+// vertical avenues. All streams use the same pace so one scripted NPC cannot
+// catch and overlap the next one. The phase offsets keep perpendicular streams
+// separated at the nine avenue intersections across the repeating cycle.
 const TRAFFIC_STREAMS = AVENUES.length * 4;
 const TRAFFIC_MIN = -EXTENT + 2;
 const TRAFFIC_MAX = EXTENT - 2;
 const TRAFFIC_PERIOD = TRAFFIC_MAX - TRAFFIC_MIN;
-const GOLDEN_FRACTION = 0.3819660112501051;
+const TRAFFIC_SLOT_SPACING = TRAFFIC_PERIOD / 3;
+const TRAFFIC_SPEED = 6.25;
+const TRAFFIC_PHASES = [
+  12.52, 46.31, 32.33, 3.13, 38.46, 18.24, 32.34, 19.98, 17.5, 46.32, 2.98,
+  40.95,
+];
 
 function streamLayout(stream) {
   const vertical = stream >= AVENUES.length * 2;
@@ -112,42 +190,35 @@ function vehicleShape(kind) {
   return { halfWidth: 0.46, halfLength: 1.18 };
 }
 
+function wrap(value, period) {
+  return ((value % period) + period) % period;
+}
+
 export function makeTraffic(rng, regularCount, rushCount = 0) {
   const total = regularCount + rushCount;
-  const streamOffsets = Array.from({ length: TRAFFIC_STREAMS }, (_, stream) =>
-    (rng() * 0.2 + stream * GOLDEN_FRACTION) % 1,
-  );
-  // Tiny per-stream differences stop the whole grid looking mechanically synced,
-  // while every vehicle inside a stream keeps exactly the same pace.
-  const streamSpeeds = Array.from(
-    { length: TRAFFIC_STREAMS },
-    (_, stream) => 6.15 + (stream % 3) * 0.18 + rng() * 0.18,
-  );
+  // A daily global rotation changes where the whole pattern starts without
+  // destroying the safe relative cadence between crossing streams.
+  const dailyShift = rng() * TRAFFIC_SLOT_SPACING;
+  const regularSlots = Math.ceil(regularCount / TRAFFIC_STREAMS);
 
   return Array.from({ length: total }, (_, id) => {
     const rushOnly = id >= regularCount;
     const localId = rushOnly ? id - regularCount : id;
-    const localCount = rushOnly ? rushCount : regularCount;
     const stream = localId % TRAFFIC_STREAMS;
-    const slot = Math.floor(localId / TRAFFIC_STREAMS);
-    const slotsInStream = Math.ceil(
-      Math.max(0, localCount - stream) / TRAFFIC_STREAMS,
-    );
+    const localSlot = Math.floor(localId / TRAFFIC_STREAMS);
+    const slot = rushOnly ? regularSlots + localSlot : localSlot;
     const layout = streamLayout(stream);
-    const offset = streamOffsets[stream];
-    // Rush adds one extra vehicle into each stream gap when counts are multiples
-    // of twelve. It no longer creates a random pile at an intersection.
-    const fraction = rushOnly
-      ? ((slot + 0.5) / Math.max(1, slotsInStream) + offset) % 1
-      : (slot / Math.max(1, slotsInStream) + offset) % 1;
     const kind = id % 11 === 0 ? "car" : id % 7 === 0 ? "delivery" : "bike";
     return {
       id,
       ...layout,
       stream,
       rushOnly,
-      phase: fraction * TRAFFIC_PERIOD,
-      speed: streamSpeeds[stream],
+      phase: wrap(
+        TRAFFIC_PHASES[stream] + dailyShift + slot * TRAFFIC_SLOT_SPACING,
+        TRAFFIC_PERIOD,
+      ),
+      speed: TRAFFIC_SPEED,
       kind,
       ...vehicleShape(kind),
       x: 0,
@@ -164,10 +235,6 @@ export function makeTraffic(rng, regularCount, rushCount = 0) {
       colour: Math.floor(rng() * 5),
     };
   });
-}
-
-function wrap(value, period) {
-  return ((value % period) + period) % period;
 }
 
 function legacyTrafficPose(vehicle, time) {
@@ -209,8 +276,7 @@ export function trafficPose(vehicle, time) {
     }
   }
 
-  // Horn response is a smooth temporary nudge inside the current road, not a
-  // lane teleport. Local avoidance can layer on top of this in the simulation.
+  // Horn response is a smooth temporary nudge inside the current road, not a lane teleport.
   if (vehicle.honkedUntil > time && vehicle.honkedAt <= time) {
     const duration = Math.max(0.001, vehicle.honkedUntil - vehicle.honkedAt);
     const progress = Math.min(1, Math.max(0, (time - vehicle.honkedAt) / duration));
