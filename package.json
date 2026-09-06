@@ -1,0 +1,32 @@
+{
+  "name": "xe-om-chaos-saigon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node tests/run.test.js",
+    "test:llm": "node scripts/test-llm.mjs",
+    "dev:ai": "node scripts/ai-dev.mjs",
+    "codex": "node scripts/codex-agent.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "evaluate:routes": "node scripts/evaluate-routes.mjs",
+    "format": "prettier --write src tests scripts index.html style.css *.json *.md",
+    "format:check": "prettier --check src tests scripts index.html style.css *.json *.md",
+    "quality": "npm run typecheck && npm test && npm run format:check",
+    "package": "node scripts/package.mjs"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.180.0",
+    "playwright": "1.62.1",
+    "prettier": "3.6.2",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
