@@ -81,33 +81,63 @@ export function district(x, z) {
   if (z > 20) return "CHUNG CƯ NẮNG";
   return "ĐẠI LỘ SÀI GÒN";
 }
-export function makeTraffic(rng, count) {
-  return Array.from({ length: count }, (_, id) => {
-    const row = Math.floor(rng() * 2),
-      col = Math.floor(rng() * 2);
-    const left = -72 + col * 72,
-      top = -72 + row * 72;
-    const direction = rng() > 0.3 ? 1 : -1;
+
+const TRAFFIC_STREAMS = 8;
+const GOLDEN_FRACTION = 0.3819660112501051;
+
+function streamLayout(stream) {
+  const route = Math.floor(stream / 2);
+  const direction = stream % 2 === 0 ? 1 : -1;
+  const row = Math.floor(route / 2),
+    col = route % 2;
+  const left = -72 + col * 72,
+    top = -72 + row * 72;
+  const lane = 2.8 * direction;
+  const sideLength = 72 - 2 * lane;
+  return {
+    route,
+    direction,
+    left,
+    top,
+    lane,
+    sideLength,
+    phasePeriod: sideLength * 4,
+  };
+}
+
+export function makeTraffic(rng, regularCount, rushCount = 0) {
+  const total = regularCount + rushCount;
+  const streamOffsets = Array.from({ length: TRAFFIC_STREAMS }, () => rng());
+  const streamSpeeds = Array.from(
+    { length: TRAFFIC_STREAMS },
+    (_, stream) => 6.2 + (stream % 4) * 0.22 + rng() * 0.55,
+  );
+
+  return Array.from({ length: total }, (_, id) => {
+    const rushOnly = id >= regularCount;
+    const localId = rushOnly ? id - regularCount : id;
+    const localCount = rushOnly ? rushCount : regularCount;
+    const stream = localId % TRAFFIC_STREAMS;
+    const slot = Math.floor(localId / TRAFFIC_STREAMS);
+    const slotsInStream = Math.ceil(
+      Math.max(0, localCount - stream) / TRAFFIC_STREAMS,
+    );
+    const layout = streamLayout(stream);
+    const offset =
+      (streamOffsets[stream] + stream * GOLDEN_FRACTION) % 1;
+    // Normal traffic is evenly spaced. Rush vehicles are inserted halfway through
+    // larger gaps instead of being randomly stacked on top of existing riders.
+    const fraction = rushOnly
+      ? ((slot + 0.5) / Math.max(1, slotsInStream) + offset) % 1
+      : (slot / Math.max(1, slotsInStream) + offset) % 1;
     const kind = id % 11 === 0 ? "car" : id % 7 === 0 ? "delivery" : "bike";
-    // Two same-direction bands make traffic read as a flow with changing gaps instead of
-    // a single file of isolated obstacles. Bikes get a small, smooth wander inside their band.
-    const laneBand = rng() > 0.52 ? 1 : 0;
-    const baseSpeed =
-      kind === "car"
-        ? 4.5 + rng() * 2.5
-        : kind === "delivery"
-          ? 5.2 + rng() * 3.4
-          : 6 + rng() * 5;
     return {
       id,
-      left,
-      top,
-      direction,
-      laneBand,
-      lanePhase: rng() * Math.PI * 2,
-      laneWander: kind === "bike" ? 0.18 + rng() * 0.18 : 0,
-      phase: rng() * 288,
-      speed: baseSpeed + laneBand * 0.8,
+      ...layout,
+      stream,
+      rushOnly,
+      phase: fraction * layout.phasePeriod,
+      speed: streamSpeeds[stream],
       kind,
       x: 0,
       z: 0,
@@ -117,44 +147,45 @@ export function makeTraffic(rng, count) {
       closest: Infinity,
       nearSide: 0,
       lastNear: -100,
+      honkedAt: -100,
       honkedUntil: 0,
-      active: true,
+      spawnBlocked: false,
+      active: !rushOnly,
       colour: Math.floor(rng() * 5),
     };
   });
 }
+
+function wrap(value, period) {
+  return ((value % period) + period) % period;
+}
+
 export function trafficPose(vehicle, time) {
-  const p =
-    (((vehicle.phase + time * vehicle.speed * vehicle.direction) % 288) + 288) %
-    288;
-  const band = vehicle.laneBand ?? 0;
-  const wander =
-    vehicle.kind === "bike"
-      ? Math.sin(time * 0.72 + (vehicle.lanePhase ?? 0)) *
-        (vehicle.laneWander ?? 0)
-      : 0;
-  // A horn response nudges a vehicle within its own half of the road; it never jumps
-  // across the centre line or outside the road boundary.
-  const hornNudge =
-    vehicle.honkedUntil > time ? (band === 0 ? 0.55 : -0.55) : 0;
-  const lane =
-    vehicle.direction * (2.15 + band * 2.25 + wander + hornNudge);
-  if (p < 72) {
-    vehicle.x = vehicle.left + p;
-    vehicle.z = vehicle.top + lane;
-    vehicle.angle = Math.PI / 2;
-  } else if (p < 144) {
-    vehicle.x = vehicle.left + 72 - lane;
-    vehicle.z = vehicle.top + p - 72;
-    vehicle.angle = 0;
-  } else if (p < 216) {
-    vehicle.x = vehicle.left + 216 - p;
-    vehicle.z = vehicle.top + 72 - lane;
-    vehicle.angle = -Math.PI / 2;
-  } else {
-    vehicle.x = vehicle.left + lane;
-    vehicle.z = vehicle.top + 288 - p;
-    vehicle.angle = Math.PI;
+  const lane = vehicle.lane ?? 2.8 * vehicle.direction;
+  const side = vehicle.sideLength ?? 72 - 2 * lane;
+  const period = vehicle.phasePeriod ?? side * 4;
+  const left = vehicle.left,
+    top = vehicle.top;
+  const a = { x: left + lane, z: top + lane },
+    b = { x: left + 72 - lane, z: top + lane },
+    c = { x: left + 72 - lane, z: top + 72 - lane },
+    d = { x: left + lane, z: top + 72 - lane };
+  const points = vehicle.direction > 0 ? [a, b, c, d, a] : [a, d, c, b, a];
+  const travel = wrap(vehicle.phase + time * vehicle.speed, period);
+  const segment = Math.min(3, Math.floor(travel / side));
+  const local = (travel - segment * side) / side;
+  const from = points[segment],
+    to = points[segment + 1];
+  vehicle.x = from.x + (to.x - from.x) * local;
+  vehicle.z = from.z + (to.z - from.z) * local;
+  vehicle.angle = Math.atan2(to.x - from.x, to.z - from.z);
+
+  // Horn response is a smooth temporary nudge, not an instant lane jump.
+  if (vehicle.honkedUntil > time && vehicle.honkedAt <= time) {
+    const duration = Math.max(0.001, vehicle.honkedUntil - vehicle.honkedAt);
+    const progress = Math.min(1, Math.max(0, (time - vehicle.honkedAt) / duration));
+    const nudge = Math.sin(progress * Math.PI) * 0.4 * vehicle.direction;
+    vehicle.x += Math.cos(vehicle.angle) * nudge;
+    vehicle.z -= Math.sin(vehicle.angle) * nudge;
   }
-  if (vehicle.direction < 0) vehicle.angle += Math.PI;
 }
