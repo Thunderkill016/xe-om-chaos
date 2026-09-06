@@ -1,5 +1,5 @@
 export const CONFIG = Object.freeze({
-  version: "saigon-v5",
+  version: "saigon-v6",
   step: 1 / 60,
   runSeconds: 180,
   acceleration: 15,
@@ -17,10 +17,10 @@ export const CONFIG = Object.freeze({
   nearMissRadius: 2.6,
   nearMissSpeed: 9,
   nearMissCooldown: 8,
-  // Keep density readable while traffic motion/collision is being stabilized.
-  // Rush adds a fixed, evenly distributed second wave instead of random clustering.
-  trafficCount: 48,
-  rushCount: 16,
+  // Three baseline vehicles per straight stream, then one extra per stream in rush hour.
+  // Density stays readable while we validate collision and flow before adding smarter AI.
+  trafficCount: 36,
+  rushCount: 12,
   recordHz: 10,
   threadWindow: 0.6, // Two opposite-side safe passes inside one readable manoeuvre.
   threadBoost: 0.25,
