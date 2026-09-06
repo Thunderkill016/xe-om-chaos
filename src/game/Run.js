@@ -1,6 +1,7 @@
 import { CONFIG, clamp, random, distance } from "./config.js";
 import {
   surface,
+  collisionSurface,
   makeTraffic,
   trafficPose,
   hiddenLaneAt,
@@ -208,14 +209,14 @@ export class Run {
       p.vz += (Math.cos(p.angle) * p.speed - p.vz) * dt * grip;
       const nx = p.x + p.vx * dt,
         nz = p.z + p.vz * dt;
-      if (surface(nx, nz, CONFIG.radius) !== "wall") {
+      if (collisionSurface(nx, nz, CONFIG.radius) !== "wall") {
         this.stats.distance += Math.hypot(nx - p.x, nz - p.z);
         p.x = nx;
         p.z = nz;
       } else {
         // Slide along a wall and retain steering so no recovery can trap the player.
-        if (surface(nx, p.z, CONFIG.radius) !== "wall") p.x = nx;
-        if (surface(p.x, nz, CONFIG.radius) !== "wall") p.z = nz;
+        if (collisionSurface(nx, p.z, CONFIG.radius) !== "wall") p.x = nx;
+        if (collisionSurface(p.x, nz, CONFIG.radius) !== "wall") p.z = nz;
         if (p.speed > 7) this.crash();
         else {
           p.speed *= 0.92;
