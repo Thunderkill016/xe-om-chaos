@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node scripts/serve.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/run.test.js",
+    "test": "node --test tests/*.test.js",
     "test:llm": "node scripts/test-llm.mjs",
     "dev:ai": "node scripts/ai-dev.mjs",
     "codex": "node scripts/codex-agent.mjs",
