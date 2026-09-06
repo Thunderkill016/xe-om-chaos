@@ -21,9 +21,4 @@ jobs:
       - name: Opening route diagnostic
         run: |
           node --input-type=module -e 'import { driveOpeningRoute } from "./scripts/evaluate-routes.mjs"; const { run, measurement } = driveOpeningRoute("2026-09-06", "hem26"); console.log(JSON.stringify({ measurement, crashes: run.moments.filter((m) => m.type === "crash") }, null, 2));'
-      - name: Chaos formatting diagnostic
-        run: |
-          npx prettier src/game/ChaosDirector.js --write
-          git diff -- src/game/ChaosDirector.js
-          git diff --exit-code -- src/game/ChaosDirector.js
       - run: npm run quality
