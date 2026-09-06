@@ -271,8 +271,7 @@ export function trafficPose(vehicle, time) {
     legacyTrafficPose(vehicle, time, hasLegacyRoute);
   else {
     const travel =
-      TRAFFIC_MIN +
-      wrap(vehicle.phase + time * vehicle.speed, TRAFFIC_PERIOD);
+      TRAFFIC_MIN + wrap(vehicle.phase + time * vehicle.speed, TRAFFIC_PERIOD);
     if (vehicle.axis === "x") {
       vehicle.x = vehicle.direction > 0 ? travel : -travel;
       vehicle.z = vehicle.lane;
@@ -287,7 +286,10 @@ export function trafficPose(vehicle, time) {
   // Horn response is a smooth temporary nudge inside the current road, not a lane teleport.
   if (vehicle.honkedUntil > time && vehicle.honkedAt <= time) {
     const duration = Math.max(0.001, vehicle.honkedUntil - vehicle.honkedAt);
-    const progress = Math.min(1, Math.max(0, (time - vehicle.honkedAt) / duration));
+    const progress = Math.min(
+      1,
+      Math.max(0, (time - vehicle.honkedAt) / duration),
+    );
     const nudge = Math.sin(progress * Math.PI) * 0.42;
     vehicle.x += Math.cos(vehicle.angle) * nudge;
     vehicle.z -= Math.sin(vehicle.angle) * nudge;
