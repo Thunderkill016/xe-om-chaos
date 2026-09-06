@@ -82,35 +82,46 @@ export function district(x, z) {
   return "ĐẠI LỘ SÀI GÒN";
 }
 
-const TRAFFIC_STREAMS = 8;
+// Twelve stable streams: two directions on each of the three horizontal and
+// three vertical avenues. Vehicles within one stream share pace and spacing, so
+// they cannot catch and stack into one another. This is intentionally simpler
+// than lane-changing AI while the core traffic interaction is being stabilized.
+const TRAFFIC_STREAMS = AVENUES.length * 4;
+const TRAFFIC_MIN = -EXTENT + 2;
+const TRAFFIC_MAX = EXTENT - 2;
+const TRAFFIC_PERIOD = TRAFFIC_MAX - TRAFFIC_MIN;
 const GOLDEN_FRACTION = 0.3819660112501051;
 
 function streamLayout(stream) {
-  const route = Math.floor(stream / 2);
-  const direction = stream % 2 === 0 ? 1 : -1;
-  const row = Math.floor(route / 2),
-    col = route % 2;
-  const left = -72 + col * 72,
-    top = -72 + row * 72;
-  const lane = 2.8 * direction;
-  const sideLength = 72 - 2 * lane;
+  const vertical = stream >= AVENUES.length * 2;
+  const local = vertical ? stream - AVENUES.length * 2 : stream;
+  const road = AVENUES[Math.floor(local / 2)];
+  const direction = local % 2 === 0 ? 1 : -1;
   return {
-    route,
+    axis: vertical ? "z" : "x",
+    road,
     direction,
-    left,
-    top,
-    lane,
-    sideLength,
-    phasePeriod: sideLength * 4,
+    // Right-hand road placement from the vehicle's point of view.
+    lane: vertical ? road - direction * 2.75 : road + direction * 2.75,
   };
+}
+
+function vehicleShape(kind) {
+  if (kind === "car") return { halfWidth: 1.05, halfLength: 1.8 };
+  if (kind === "delivery") return { halfWidth: 0.58, halfLength: 1.28 };
+  return { halfWidth: 0.46, halfLength: 1.18 };
 }
 
 export function makeTraffic(rng, regularCount, rushCount = 0) {
   const total = regularCount + rushCount;
-  const streamOffsets = Array.from({ length: TRAFFIC_STREAMS }, () => rng());
+  const streamOffsets = Array.from({ length: TRAFFIC_STREAMS }, (_, stream) =>
+    (rng() * 0.2 + stream * GOLDEN_FRACTION) % 1,
+  );
+  // Tiny per-stream differences stop the whole grid looking mechanically synced,
+  // while every vehicle inside a stream keeps exactly the same pace.
   const streamSpeeds = Array.from(
     { length: TRAFFIC_STREAMS },
-    (_, stream) => 6.2 + (stream % 4) * 0.22 + rng() * 0.55,
+    (_, stream) => 6.15 + (stream % 3) * 0.18 + rng() * 0.18,
   );
 
   return Array.from({ length: total }, (_, id) => {
@@ -123,10 +134,9 @@ export function makeTraffic(rng, regularCount, rushCount = 0) {
       Math.max(0, localCount - stream) / TRAFFIC_STREAMS,
     );
     const layout = streamLayout(stream);
-    const offset =
-      (streamOffsets[stream] + stream * GOLDEN_FRACTION) % 1;
-    // Normal traffic is evenly spaced. Rush vehicles are inserted halfway through
-    // larger gaps instead of being randomly stacked on top of existing riders.
+    const offset = streamOffsets[stream];
+    // Rush adds one extra vehicle into each stream gap when counts are multiples
+    // of twelve. It no longer creates a random pile at an intersection.
     const fraction = rushOnly
       ? ((slot + 0.5) / Math.max(1, slotsInStream) + offset) % 1
       : (slot / Math.max(1, slotsInStream) + offset) % 1;
@@ -136,13 +146,13 @@ export function makeTraffic(rng, regularCount, rushCount = 0) {
       ...layout,
       stream,
       rushOnly,
-      phase: fraction * layout.phasePeriod,
+      phase: fraction * TRAFFIC_PERIOD,
       speed: streamSpeeds[stream],
       kind,
+      ...vehicleShape(kind),
       x: 0,
       z: 0,
       angle: 0,
-      radius: kind === "car" ? 1.5 : 0.72,
       near: false,
       closest: Infinity,
       nearSide: 0,
@@ -160,7 +170,7 @@ function wrap(value, period) {
   return ((value % period) + period) % period;
 }
 
-export function trafficPose(vehicle, time) {
+function legacyTrafficPose(vehicle, time) {
   const lane = vehicle.lane ?? 2.8 * vehicle.direction;
   const side = vehicle.sideLength ?? 72 - 2 * lane;
   const period = vehicle.phasePeriod ?? side * 4;
@@ -179,13 +189,53 @@ export function trafficPose(vehicle, time) {
   vehicle.x = from.x + (to.x - from.x) * local;
   vehicle.z = from.z + (to.z - from.z) * local;
   vehicle.angle = Math.atan2(to.x - from.x, to.z - from.z);
+}
 
-  // Horn response is a smooth temporary nudge, not an instant lane jump.
+export function trafficPose(vehicle, time) {
+  // Preserve old diagnostic fixtures that hand-author the former block-loop fields.
+  if (!vehicle.axis) legacyTrafficPose(vehicle, time);
+  else {
+    const travel =
+      TRAFFIC_MIN +
+      wrap(vehicle.phase + time * vehicle.speed, TRAFFIC_PERIOD);
+    if (vehicle.axis === "x") {
+      vehicle.x = vehicle.direction > 0 ? travel : -travel;
+      vehicle.z = vehicle.lane;
+      vehicle.angle = vehicle.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+    } else {
+      vehicle.x = vehicle.lane;
+      vehicle.z = vehicle.direction > 0 ? travel : -travel;
+      vehicle.angle = vehicle.direction > 0 ? 0 : Math.PI;
+    }
+  }
+
+  // Horn response is a smooth temporary nudge inside the current road, not a
+  // lane teleport. Local avoidance can layer on top of this in the simulation.
   if (vehicle.honkedUntil > time && vehicle.honkedAt <= time) {
     const duration = Math.max(0.001, vehicle.honkedUntil - vehicle.honkedAt);
     const progress = Math.min(1, Math.max(0, (time - vehicle.honkedAt) / duration));
-    const nudge = Math.sin(progress * Math.PI) * 0.4 * vehicle.direction;
+    const nudge = Math.sin(progress * Math.PI) * 0.42;
     vehicle.x += Math.cos(vehicle.angle) * nudge;
     vehicle.z -= Math.sin(vehicle.angle) * nudge;
   }
+}
+
+// Circle-vs-oriented-box clearance. Negative means the point lies inside the
+// traffic body's footprint. It matches the visible car/bike proportions much
+// better than the old single radius for every direction.
+export function vehicleClearance(vehicle, point) {
+  const dx = point.x - vehicle.x,
+    dz = point.z - vehicle.z;
+  const sideX = Math.cos(vehicle.angle),
+    sideZ = -Math.sin(vehicle.angle),
+    forwardX = Math.sin(vehicle.angle),
+    forwardZ = Math.cos(vehicle.angle);
+  const lateral = dx * sideX + dz * sideZ,
+    longitudinal = dx * forwardX + dz * forwardZ;
+  const halfWidth = vehicle.halfWidth ?? (vehicle.kind === "car" ? 1.05 : 0.46),
+    halfLength = vehicle.halfLength ?? (vehicle.kind === "car" ? 1.8 : 1.18);
+  const ox = Math.abs(lateral) - halfWidth,
+    oz = Math.abs(longitudinal) - halfLength;
+  if (ox <= 0 && oz <= 0) return Math.max(ox, oz);
+  return Math.hypot(Math.max(0, ox), Math.max(0, oz));
 }
