@@ -261,6 +261,7 @@ export function makeTraffic(rng, regularCount, rushCount = 0) {
       lastNear: -100,
       honkedAt: -100,
       honkedUntil: 0,
+      avoidOffset: 0,
       spawnBlocked: false,
       active: !rushOnly,
       colour: Math.floor(rng() * 5),
