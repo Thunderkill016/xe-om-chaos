@@ -23,7 +23,7 @@ export class Scene {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xb2cfca);
     this.scene.fog = new THREE.Fog(0xb2cfca, 110, 290);
-    this.camera = new THREE.PerspectiveCamera(49, 1, 0.2, 400);
+    this.camera = new THREE.PerspectiveCamera(50, 1, 0.2, 400);
     this.scene.add(new THREE.HemisphereLight(0xc9e3f1, 0x68717c, 1.5));
     this.sun = new THREE.DirectionalLight(0xffdab0, 3);
     this.sun.position.set(-50, 90, -30);
@@ -255,23 +255,28 @@ export class Scene {
     this.marker.material.color.setHex(markerColour);
     this.pin.material.color.setHex(markerColour);
     if (playing) {
-      const followDistance = 12 + p.speed * 0.18;
+      // Keep the rider visually present at speed instead of pulling the camera far away.
+      // Forward look-ahead grows faster than follow distance so traffic remains readable.
+      const speedRatio = Math.min(p.speed / CONFIG.boostSpeed, 1);
+      const followDistance = 10.8 + speedRatio * 2.2;
+      const cameraHeight = 6.8 + speedRatio * 1.1;
       this.desired.set(
         p.x - Math.sin(p.angle) * followDistance,
-        8.5 + p.speed * 0.08,
+        cameraHeight,
         p.z - Math.cos(p.angle) * followDistance,
       );
-      const blend = 1 - Math.exp(-dt * 5);
+      const blend = 1 - Math.exp(-dt * 6);
       this.camera.position.lerp(this.desired, blend);
+      const lookAhead = 9.5 + speedRatio * 7;
       this.lookAt.set(
-        p.x + Math.sin(p.angle) * 7,
+        p.x + Math.sin(p.angle) * lookAhead,
         1,
-        p.z + Math.cos(p.angle) * 7,
+        p.z + Math.cos(p.angle) * lookAhead,
       );
       this.camera.lookAt(this.lookAt);
       const fov = this.reducedMotion
         ? 52
-        : 49 + p.speed * 0.24 + (p.boosting ? 3 : 0);
+        : 50 + speedRatio * 10 + (p.boosting ? 2 : 0);
       this.camera.fov += (fov - this.camera.fov) * blend;
       this.camera.updateProjectionMatrix();
       if (!this.reducedMotion && p.recovery > 0) {
