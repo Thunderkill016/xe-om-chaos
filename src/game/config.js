@@ -1,5 +1,5 @@
 export const CONFIG = Object.freeze({
-  version: "saigon-v4",
+  version: "saigon-v5",
   step: 1 / 60,
   runSeconds: 180,
   acceleration: 15,
@@ -17,10 +17,10 @@ export const CONFIG = Object.freeze({
   nearMissRadius: 2.6,
   nearMissSpeed: 9,
   nearMissCooldown: 8,
-  // First traffic-feel pass: a modest baseline increase plus a stronger rush-hour spike.
-  // Instancing/culling still bound the rendering cost; human play decides whether density stays.
+  // Keep density readable while traffic motion/collision is being stabilized.
+  // Rush adds a fixed, evenly distributed second wave instead of random clustering.
   trafficCount: 48,
-  rushCount: 20,
+  rushCount: 16,
   recordHz: 10,
   threadWindow: 0.6, // Two opposite-side safe passes inside one readable manoeuvre.
   threadBoost: 0.25,
