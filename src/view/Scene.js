@@ -1,9 +1,11 @@
 import * as THREE from "three";
 import { CONFIG } from "../game/config.js";
+import { BUILDING_RECTS } from "../world/map.js";
 import { colouredGeometry, vertexMaterial } from "./batch.js";
 import { buildCity } from "./City.js";
 import { Effects } from "./Effects.js";
 import { makeScooter, StreetLife } from "./Characters.js";
+import { MENU_CAMERA, resolveCameraPosition } from "./CameraRig.js";
 
 export class Scene {
   constructor(canvas) {
@@ -133,8 +135,16 @@ export class Scene {
       new THREE.MeshBasicMaterial({ color: 0xffcd6d }),
     );
     this.scene.add(this.pin);
-    this.camera.position.set(-14, 7.4, -25);
-    this.camera.lookAt(0, 1.8, 8);
+    this.camera.position.set(
+      MENU_CAMERA.position.x,
+      MENU_CAMERA.position.y,
+      MENU_CAMERA.position.z,
+    );
+    this.camera.lookAt(
+      MENU_CAMERA.target.x,
+      MENU_CAMERA.target.y,
+      MENU_CAMERA.target.z,
+    );
     this.resize();
     window.addEventListener("resize", () => this.resize());
   }
@@ -271,6 +281,13 @@ export class Scene {
         cameraHeight,
         p.z - Math.cos(p.angle) * followDistance,
       );
+      const resolvedCamera = resolveCameraPosition(
+        { x: p.x, z: p.z },
+        { x: this.desired.x, z: this.desired.z },
+        BUILDING_RECTS,
+      );
+      this.desired.x = resolvedCamera.x;
+      this.desired.z = resolvedCamera.z;
       const blend = 1 - Math.exp(-dt * 6);
       this.camera.position.lerp(this.desired, blend);
       const lookAhead = 12.5 + speedRatio * 8.5;
@@ -289,8 +306,16 @@ export class Scene {
         this.camera.position.x += Math.sin(run.time * 65) * p.recovery * 0.18;
       }
     } else {
-      this.camera.position.set(-14, 7.4, -25);
-      this.camera.lookAt(0, 1.8, 8);
+      this.camera.position.set(
+        MENU_CAMERA.position.x,
+        MENU_CAMERA.position.y,
+        MENU_CAMERA.position.z,
+      );
+      this.camera.lookAt(
+        MENU_CAMERA.target.x,
+        MENU_CAMERA.target.y,
+        MENU_CAMERA.target.z,
+      );
     }
     this.frameMs = this.frameMs * 0.95 + measuredDt * 1000 * 0.05;
     this.fps = 1000 / this.frameMs;
