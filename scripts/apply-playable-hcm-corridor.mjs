@@ -92,4 +92,34 @@ if (
 )
   changed.push("scripts/core-driving-smoke.mjs");
 
-console.log(changed.length ? `Patched ${changed.join(", ")}` : "Playable HCMC corridor already integrated");
+if (
+  await patchFile("src/world/HcmCorridor.js", [
+    [
+      `} from "./map.js";\n\nconst ANCHOR`,
+      `} from "./map.js";\n\n/** @typedef {[number, number]} OsmPoint */\n/** @typedef {[string, number, OsmPoint[]]} OsmRoad */\n/** @typedef {[number, number, number, number, number, number, string]} OsmBuilding */\n/** @typedef {{x:number,z:number,w:number,d:number,h:number,angle:number,kind:string}} CorridorBuilding */\n\nconst ANCHOR`,
+    ],
+    [
+      `function selectCorridor() {\n  const roads = HCMC_OSM_DATA.roads.filter(`,
+      `function selectCorridor() {\n  /** @type {OsmRoad[]} */\n  const osmRoads = /** @type {OsmRoad[]} */ (HCMC_OSM_DATA.roads);\n  const roads = osmRoads.filter(`,
+    ],
+    [
+      `  const buildings = [];\n  for (const source of HCMC_OSM_DATA.buildings) {`,
+      `  /** @type {CorridorBuilding[]} */\n  const buildings = [];\n  /** @type {OsmBuilding[]} */\n  const osmBuildings = /** @type {OsmBuilding[]} */ (HCMC_OSM_DATA.buildings);\n  for (const source of osmBuildings) {`,
+    ],
+    [
+      `    const vehicle = traffic[id];`,
+      `    /** @type {any} */\n    const vehicle = traffic[id];`,
+    ],
+    [
+      `export function worldTrafficPose(vehicle, time) {`,
+      `/**\n * @param {any} vehicle\n * @param {number} time\n */\nexport function worldTrafficPose(vehicle, time) {`,
+    ],
+  ])
+)
+  changed.push("src/world/HcmCorridor.js");
+
+console.log(
+  changed.length
+    ? `Patched ${changed.join(", ")}`
+    : "Playable HCMC corridor already integrated",
+);
