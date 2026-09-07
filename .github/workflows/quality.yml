@@ -60,6 +60,21 @@ jobs:
       - name: Opening route diagnostic
         run: |
           node --input-type=module -e 'import { driveOpeningRoute } from "./scripts/evaluate-routes.mjs"; const { run, measurement } = driveOpeningRoute("2026-09-06", "hem26"); console.log(JSON.stringify({ measurement, crashes: run.moments.filter((m) => m.type === "crash") }, null, 2));'
+      - name: Real Saigon corridor diagnostic
+        run: |
+          node --input-type=module - <<'NODE'
+          import { CONFIG, random } from './src/game/config.js';
+          import { REAL_HCM_CORRIDOR, REAL_HCM_CORRIDOR_BUILDINGS, makeWorldTraffic, realCorridorDistance, worldTrafficPose } from './src/world/HcmCorridor.js';
+          const traffic = makeWorldTraffic(random('diag'), CONFIG.trafficCount, CONFIG.rushCount).filter(v => v.route === REAL_HCM_CORRIDOR.id);
+          for (const v of traffic) worldTrafficPose(v, 0);
+          console.log(JSON.stringify({
+            corridor: REAL_HCM_CORRIDOR,
+            end: REAL_HCM_CORRIDOR.points.at(-1),
+            buildings: REAL_HCM_CORRIDOR_BUILDINGS.length,
+            firstBuildings: REAL_HCM_CORRIDOR_BUILDINGS.slice(0, 4),
+            traffic: traffic.map(v => ({ id:v.id, lane:v.lane, dir:v.corridorDirection, x:v.x, z:v.z, distance:realCorridorDistance(v.x,v.z) }))
+          }, null, 2));
+          NODE
       - run: npm run quality
       - name: Package both language editions
         run: npm run package
