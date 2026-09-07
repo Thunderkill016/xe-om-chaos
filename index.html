@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#162c2d" />
     <meta
       name="description"
-      content="Bạn biết một con hẻm. Khách của bạn thì hơi lo. A tiny, chaotic Saigon motorcycle arcade."
+      content="Chạy xe ôm giữa Sài Gòn, luồn qua dòng xe, tìm hẻm tắt và đưa khách tới nơi trước khi hết ca."
     />
     <title>XE ÔM CHAOS · SAIGON</title>
     <link
@@ -30,8 +30,8 @@
     <canvas id="game" aria-label="Thế giới Xe Ôm Chaos 3D"></canvas>
     <div class="vignette"></div>
     <header class="topbar">
-      <a class="wordmark" href="./" aria-label="Xe Ôm Chaos home"
-        >XE ÔM <span>CHAOS</span><small>SAIGON · VIỆT NAM</small></a
+      <a class="wordmark" href="./" aria-label="Trang chủ Xe Ôm Chaos"
+        >XE ÔM <span>CHAOS</span><small>SÀI GÒN · VIỆT NAM</small></a
       >
       <div class="top-actions">
         <span id="daily-label" class="date-stamp"></span
@@ -43,60 +43,32 @@
     <main>
       <section id="welcome" class="welcome">
         <div class="edition">
-          <span class="live-dot"></span> MỘT CHÚT KẸT XE. MỘT CHÚT ĐIÊN.
+          <span class="live-dot"></span> ĐƯỜNG ĐÔNG. HẺM HẸP. VẪN PHẢI TỚI.
         </div>
         <h1>XE ÔM<br /><span>CHAOS.</span></h1>
-        <div class="city-stamp"><span>↗</span> SAIGON</div>
-        <p
-          class="tagline"
-          data-vi="Bạn biết một con hẻm.\nKhách của bạn thì hơi lo."
-          data-en="You know a shortcut.\nYour passenger wishes you didn't."
-        ></p>
+        <div class="city-stamp"><span>↗</span> SÀI GÒN</div>
+        <p class="tagline">Bạn biết đường tắt.<br />Khách thì chưa chắc dám tin.</p>
         <div class="start-actions">
-          <button
-            id="start"
-            class="primary"
-            data-vi="LÊN XE THÔI ↗"
-            data-en="LET'S RIDE ↗"
-          >
-            LÊN XE THÔI ↗</button
-          ><span
-            data-vi="3 PHÚT · MỖI NGÀY MỘT THỬ THÁCH"
-            data-en="3 MINUTES · ONE SHARED DAILY RUN"
-          ></span>
+          <button id="start" class="primary">LÊN XE THÔI ↗</button
+          ><span>3 PHÚT · MỖI NGÀY MỘT CUỐC MỚI</span>
         </div>
         <div class="quick-controls">
-          <span
-            ><kbd>W A S D</kbd>
-            <span data-vi="Lái xe" data-en="Ride"></span></span
-          ><span
-            ><kbd>SPACE</kbd>
-            <span data-vi="Bóp còi" data-en="Horn"></span></span
-          ><span
-            ><kbd>SHIFT</kbd> <span data-vi="Tăng tốc" data-en="Boost"></span
-          ></span>
+          <span><kbd>W A S D</kbd> <span>Lái xe</span></span
+          ><span><kbd>SPACE</kbd> <span>Bóp còi</span></span
+          ><span><kbd>SHIFT</kbd> <span>Bứt tốc</span></span>
         </div>
         <p class="welcome-best" id="welcome-best"></p>
       </section>
       <div id="postcard" class="postcard">
         <span>10°46′ N · 106°41′ E</span
         ><strong>ĐƯỜNG ĐÔNG.<br />ĐỜI VUI.</strong
-        ><small>THE CITY IS YOUR PLAYGROUND.</small>
+        ><small>CỨ BIẾT ĐƯỜNG LÀ CÒN CHẠY ĐƯỢC.</small>
       </div>
       <section id="hud" hidden>
         <div class="run-strip">
-          <div>
-            <small data-vi="HẾT CA TRONG" data-en="SHIFT ENDS IN"></small
-            ><strong id="timer">3:00</strong>
-          </div>
-          <div class="score-block">
-            <small data-vi="ĐIỂM" data-en="SCORE"></small
-            ><strong id="score">0</strong>
-          </div>
-          <div>
-            <small data-vi="TIỀN CƯỚC" data-en="FARES"></small
-            ><strong id="fare">0 ₫</strong>
-          </div>
+          <div><small>HẾT CA TRONG</small><strong id="timer">3:00</strong></div>
+          <div class="score-block"><small>ĐIỂM</small><strong id="score">0</strong></div>
+          <div><small>TIỀN CƯỚC</small><strong id="fare">0 ₫</strong></div>
         </div>
         <div class="mission-stack">
           <div id="mission-card" class="mission-card">
@@ -104,24 +76,16 @@
             <div class="mission-copy">
               <small id="mission-phase"></small
               ><strong id="destination"></strong
-              ><span id="mission-detail"></span>
-              <span
-                id="passenger-preference"
-                class="passenger-preference"
-              ></span>
+              ><span id="mission-detail"></span
+              ><span id="passenger-preference" class="passenger-preference"></span>
             </div>
             <b id="direction">↑</b>
-            <progress
-              id="boarding-progress"
-              max="1"
-              value="0"
-              hidden
-            ></progress>
+            <progress id="boarding-progress" max="1" value="0" hidden></progress>
           </div>
           <div id="chaos" class="chaos" role="status"></div>
         </div>
         <div class="flow-panel">
-          <span>FLOW</span><strong id="combo">×1</strong>
+          <span>NHỊP</span><strong id="combo">×1</strong>
           <div class="flow-track"><i id="flow-meter"></i></div>
         </div>
         <div id="reaction" class="reaction" role="status"></div>
@@ -130,14 +94,14 @@
             id="minimap"
             width="200"
             height="200"
-            aria-label="Bản đồ các đường và điểm đến"
+            aria-label="Bản đồ đường và điểm đến"
           ></canvas
           ><span id="district"></span>
         </div>
         <div class="speed-panel">
           <strong id="speed">0</strong><span>KM/H</span>
           <div class="boost-track"><i id="boost-meter"></i></div>
-          <small>BOOST <kbd>SHIFT</kbd></small>
+          <small>BỨT TỐC <kbd>SHIFT</kbd></small>
         </div>
         <p id="ride-hint" class="ride-hint"></p>
         <div class="touch-controls" id="touch-controls">
@@ -146,118 +110,63 @@
             ><button data-input="right" aria-label="Rẽ phải">▶</button>
           </div>
           <div class="pedals">
-            <button data-input="horn" aria-label="Bóp còi" class="horn">
-              BÍP!</button
-            ><button data-input="boost" aria-label="Tăng tốc" class="boost">
-              ϟ</button
-            ><button data-input="brake" aria-label="Phanh" class="brake">
-              ■</button
-            ><button data-input="throttle" aria-label="Giữ ga" class="gas">
-              GA ↑
-            </button>
+            <button data-input="horn" aria-label="Bóp còi" class="horn">BÍP!</button
+            ><button data-input="boost" aria-label="Bứt tốc" class="boost">ϟ</button
+            ><button data-input="brake" aria-label="Phanh" class="brake">■</button
+            ><button data-input="throttle" aria-label="Giữ ga" class="gas">GA ↑</button>
           </div>
         </div>
       </section>
       <dialog id="settings">
         <form method="dialog">
           <div class="dialog-heading">
-            <h2 data-vi="CHỈNH MỘT CHÚT" data-en="MAKE IT YOURS"></h2>
+            <h2>CHỈNH MỘT CHÚT</h2>
             <button aria-label="Đóng cài đặt">✕</button>
           </div>
           <label
-            >Ngôn ngữ / Language
-            <select id="language">
-              <option value="vi">Tiếng Việt</option>
-              <option value="en">English</option>
-            </select></label
-          ><label
-            ><span data-vi="Âm thanh" data-en="Sound"></span
-            ><input
-              id="volume"
-              type="range"
-              min="0"
-              max="100"
-              value="45" /></label
-          ><label
-            ><span data-vi="Chất lượng" data-en="Graphics"></span
+            ><span>Âm thanh</span
+            ><input id="volume" type="range" min="0" max="100" value="45"
+          /></label>
+          <label
+            ><span>Chất lượng hình ảnh</span
             ><select id="quality">
-              <option value="auto">Auto</option>
-              <option value="high">High</option>
-              <option value="low">Low</option>
+              <option value="auto">Tự động</option>
+              <option value="high">Cao</option>
+              <option value="low">Thấp</option>
             </select></label
-          ><label
-            ><span data-vi="Giảm chuyển động" data-en="Reduced motion"></span
-            ><input id="motion" type="checkbox" /></label
-          ><label
-            ><span
-              data-vi="Điều khiển tay trái"
-              data-en="Left-handed controls"
-            ></span
-            ><input id="left-handed" type="checkbox" /></label
-          ><label
-            ><span data-vi="Cỡ nút cảm ứng" data-en="Touch button size"></span
-            ><input
-              id="touch-scale"
-              type="range"
-              min="85"
-              max="115"
-              value="100" /></label
-          ><button
-            class="primary"
-            data-vi="XONG RỒI"
-            data-en="ALL SET"
-          ></button>
+          >
+          <label
+            ><span>Giảm chuyển động</span><input id="motion" type="checkbox"
+          /></label>
+          <label
+            ><span>Điều khiển tay trái</span
+            ><input id="left-handed" type="checkbox"
+          /></label>
+          <label
+            ><span>Cỡ nút cảm ứng</span
+            ><input id="touch-scale" type="range" min="85" max="115" value="100"
+          /></label>
+          <button class="primary">XONG RỒI</button>
         </form>
       </dialog>
       <dialog id="pause-dialog">
-        <h2 data-vi="NGHỈ CHÚT NHA." data-en="TAKE A BREATHER."></h2>
-        <button
-          id="resume"
-          class="primary"
-          data-vi="LÁI TIẾP ↗"
-          data-en="KEEP RIDING ↗"
-        ></button
-        ><button
-          id="restart-pause"
-          class="secondary"
-          data-vi="Chạy lại từ đầu"
-          data-en="Restart run"
-        ></button>
+        <h2>TẠM NGHỈ CHÚT.</h2>
+        <button id="resume" class="primary">LÁI TIẾP ↗</button
+        ><button id="restart-pause" class="secondary">Chạy lại từ đầu</button>
       </dialog>
       <dialog id="results">
-        <div class="result-head">XE ÔM CHAOS <span>SAIGON</span></div>
-        <p
-          class="eyebrow"
-          data-vi="HẾT CA. CÓ CHUYỆN ĐỂ KỂ."
-          data-en="SHIFT OVER. STORY WORTH TELLING."
-        ></p>
+        <div class="result-head">XE ÔM CHAOS <span>SÀI GÒN</span></div>
+        <p class="eyebrow">HẾT CA. CÓ CHUYỆN ĐỂ KỂ.</p>
         <h2 id="result-title"></h2>
         <div class="result-score" id="result-score"></div>
         <p id="best-message"></p>
         <div class="result-grid" id="result-grid"></div>
         <p class="challenge-code" id="challenge-code"></p>
-        <button
-          id="again"
-          class="primary"
-          data-vi="THÊM MỘT CUỐC ↗"
-          data-en="ONE MORE RUN ↗"
-        ></button>
+        <button id="again" class="primary">THÊM MỘT CUỐC ↗</button>
         <div class="result-buttons">
-          <button
-            id="share"
-            data-vi="Thách bạn bè"
-            data-en="Challenge a friend"
-          ></button
-          ><button
-            id="save-card"
-            data-vi="Lưu ảnh kết quả"
-            data-en="Save result card"
-          ></button
-          ><button
-            id="save-replay"
-            data-vi="Lưu dữ liệu lượt chơi"
-            data-en="Save run data"
-          ></button>
+          <button id="share">Thách bạn bè</button
+          ><button id="save-card">Lưu ảnh kết quả</button
+          ><button id="save-replay">Lưu dữ liệu lượt chơi</button>
         </div>
         <p id="share-status" role="status"></p>
       </dialog>
@@ -266,7 +175,7 @@
     </main>
     <footer id="footer">
       <span>THÀNH PHỐ QUEN. MỖI CUỐC MỘT CHUYỆN.</span
-      ><span>LOCAL PLAYTEST · 01</span>
+      ><span>BẢN THỬ NỘI BỘ · 01</span>
     </footer>
     <script type="module" src="./src/main.js"></script>
   </body>
