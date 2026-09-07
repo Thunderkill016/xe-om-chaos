@@ -4,10 +4,10 @@ import { STOPS } from "../world/map.js";
 export const PASSENGERS = [
   {
     id: "office",
-    vi: "Dân văn phòng",
+    vi: "Khách công sở",
     en: "Office worker",
-    line: "Trễ họp rồi!",
-    subtitle: "Late for a meeting!",
+    line: "Cho em tới nhanh chút nha, sắp trễ họp rồi.",
+    subtitle: "Please tell me we can beat the traffic. I'm late for a meeting.",
     fare: 16000,
     deadline: 40,
     colour: "#eab76e",
@@ -15,9 +15,9 @@ export const PASSENGERS = [
   {
     id: "grandma",
     vi: "Cô Tư",
-    en: "Auntie Tư",
-    line: "Chậm thôi con!",
-    subtitle: "Easy on the throttle!",
+    en: "Cô Tư",
+    line: "Con chạy êm êm giùm cô nha.",
+    subtitle: "Easy, kid. Nice and smooth for me, okay?",
     fare: 20000,
     deadline: 60,
     colour: "#b3c9b2",
@@ -25,19 +25,19 @@ export const PASSENGERS = [
   {
     id: "student",
     vi: "Sinh viên",
-    en: "The student",
-    line: "Em biết hẻm này!",
-    subtitle: "I know a shortcut!",
+    en: "Student",
+    line: "Hẻm này thông đó, quẹo vô đi!",
+    subtitle: "Take this hẻm. It cuts straight through!",
     fare: 12000,
     deadline: 48,
     colour: "#81b8c5",
   },
   {
     id: "chaos",
-    vi: "Khách mê tốc độ",
-    en: "The thrill seeker",
-    line: "Đỉnh quá!",
-    subtitle: "What a ride!",
+    vi: "Khách khoái cảm giác mạnh",
+    en: "Thrill seeker",
+    line: "Ê, cú nãy đẹp nha!",
+    subtitle: "Okay, that move was smooth!",
     fare: 15000,
     deadline: 46,
     colour: "#e99880",
@@ -114,7 +114,7 @@ export class Missions {
         run.moment("deadline", this.deadline);
       run.emit(
         "delivery",
-        this.deadline >= 0 ? "ĐẾN NƠI RỒI!" : "MUỘN MÀ VẪN TỚI!",
+        this.deadline >= 0 ? "Tới nơi rồi." : "Trễ chút nhưng tới rồi.",
         fare,
       );
       const previous = this.destination;
