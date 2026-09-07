@@ -86,8 +86,8 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
     stage = "depart";
     hint = touch
       ? text(
-          "Giữ ga để chạy, bấm ←/→ để quẹo.",
-          "Hold GO to move. Tap ←/→ to steer.",
+          "Giữ ga ↑ để chạy, bấm ←/→ để quẹo.",
+          "Hold GO ↑ to move. Tap ←/→ to steer.",
         )
       : text(
           "W / ↑ để chạy, A/D để quẹo, S để thắng.",
