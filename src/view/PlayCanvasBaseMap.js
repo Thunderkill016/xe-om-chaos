@@ -9,10 +9,7 @@ import {
   ROAD_HALF,
   VISIBLE_LOT_RECTS,
 } from "../world/map.js";
-import {
-  REAL_HCM_CORRIDOR,
-  realCorridorDistance,
-} from "../world/HcmCorridor.js";
+import { REAL_HCM_CORRIDOR, realCorridorDistance } from "../world/HcmCorridor.js";
 
 const DEG = 180 / Math.PI;
 const BUILDING_PALETTE = [
@@ -26,7 +23,19 @@ function hash01(value) {
   return (hash >>> 0) / 4294967296;
 }
 
-function addBox(view, parent, name, hex, x, y, z, w, h, d, angle = 0) {
+function addBox(
+  view,
+  parent,
+  name,
+  hex,
+  x,
+  y,
+  z,
+  w,
+  h,
+  d,
+  angle = 0,
+) {
   const entity = view.box(name, hex, w, h, d);
   entity.setPosition(x, y, z);
   entity.setEulerAngles(0, angle * DEG, 0);
@@ -34,7 +43,17 @@ function addBox(view, parent, name, hex, x, y, z, w, h, d, angle = 0) {
   return entity;
 }
 
-function addRibbon(view, parent, name, hex, a, b, width, y, height = 0.08) {
+function addRibbon(
+  view,
+  parent,
+  name,
+  hex,
+  a,
+  b,
+  width,
+  y,
+  height = 0.08,
+) {
   const dx = b.x - a.x;
   const dz = b.z - a.z;
   const length = Math.max(0.001, Math.hypot(dx, dz));
@@ -130,7 +149,9 @@ function addBuildings(view, root) {
 
     const seed = `${rect.x}:${rect.z}:${rect.w}:${rect.d}`;
     const height = 5.8 + hash01(seed) * 8.8;
-    const paletteIndex = Math.floor(hash01(seed + ":colour") * BUILDING_PALETTE.length);
+    const paletteIndex = Math.floor(
+      hash01(seed + ":colour") * BUILDING_PALETTE.length,
+    );
     const building = new pc.Entity(`BASE_BUILDING_${index}`);
     building.setPosition(rect.x, 0, rect.z);
     root.addChild(building);
@@ -155,7 +176,8 @@ function addBuildings(view, root) {
     roof.setLocalPosition(0, height + 0.11, 0);
     building.addChild(roof);
 
-    const faceZ = rect.z < 0 ? rect.d * 0.5 + 0.055 : -rect.d * 0.5 - 0.055;
+    const faceZ =
+      rect.z < 0 ? rect.d * 0.5 + 0.055 : -rect.d * 0.5 - 0.055;
     const glass = view.box(
       "BASE_SHOPFRONT",
       0x42666a,
