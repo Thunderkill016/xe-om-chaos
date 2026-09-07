@@ -2,10 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { CONFIG, random } from "../src/game/config.js";
 import {
+  REAL_HCM_BUILDING_CLEARANCE,
   REAL_HCM_CORRIDOR,
   REAL_HCM_CORRIDOR_BUILDINGS,
   REAL_HCM_CORRIDOR_STOPS,
   makeWorldTraffic,
+  realCorridorBuildingClearance,
   realCorridorDistance,
   realCorridorSurface,
   worldCollisionSurface,
@@ -55,6 +57,34 @@ test("nearby OSM buildings remain solid while the corridor stays open", () => {
     realCorridorSurface(midpoint.x, midpoint.z, CONFIG.radius),
     "wall",
   );
+});
+
+test("OSM building footprints preserve the whole road and camera corridor", () => {
+  const required =
+    REAL_HCM_CORRIDOR.shoulderWidth * 0.5 + REAL_HCM_BUILDING_CLEARANCE;
+  for (const building of REAL_HCM_CORRIDOR_BUILDINGS) {
+    assert.ok(
+      realCorridorBuildingClearance(building) >= required - 1e-6,
+      `building at ${building.x.toFixed(1)},${building.z.toFixed(1)} cuts into the playable/camera corridor`,
+    );
+  }
+
+  for (let index = 1; index < REAL_HCM_CORRIDOR.points.length; index++) {
+    const a = REAL_HCM_CORRIDOR.points[index - 1];
+    const b = REAL_HCM_CORRIDOR.points[index];
+    const length = Math.hypot(b.x - a.x, b.z - a.z);
+    const samples = Math.max(2, Math.ceil(length / 0.75));
+    for (let step = 0; step <= samples; step++) {
+      const t = step / samples;
+      const x = a.x + (b.x - a.x) * t;
+      const z = a.z + (b.z - a.z) * t;
+      assert.equal(
+        realCorridorSurface(x, z, CONFIG.radius + 0.3),
+        "road",
+        `corridor centerline is visually/collision blocked at ${x.toFixed(1)},${z.toFixed(1)}`,
+      );
+    }
+  }
 });
 
 test("a bounded share of live traffic follows the OSM corridor in both directions", () => {
