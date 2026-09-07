@@ -25,11 +25,11 @@ function cardTitle(result, language) {
     if (result.crashes >= 5) return "BIKE'S SEEN BETTER DAYS";
     return "SOLID SAIGON RUN";
   }
-  if (result.alleys >= 3) return "BÁC TÀI RÀNH HẺM";
-  if (result.nearMisses >= 12) return "BÁC TÀI LÁCH KHÉO";
-  if (result.horns >= 20) return "BÁC TÀI BÓP CÒI HƠI NHIỀU";
-  if (result.crashes >= 5) return "BÁC TÀI HÔM NAY HƠI XUI";
-  return "CA NÀY BÁC TÀI CHẠY ỔN";
+  if (result.alleys >= 3) return "RÀNH HẺM THIỆT";
+  if (result.nearMisses >= 12) return "LÁCH GỌN ĐÓ";
+  if (result.horns >= 20) return "CÒI HƠI NHIỀU NHA";
+  if (result.crashes >= 5) return "HÔM NAY VA QUẸT HƠI NHIỀU";
+  return "CA NÀY CHẠY ỔN";
 }
 export function resultCard(result, language = "vi") {
   const en = language === "en";
@@ -52,11 +52,7 @@ export function resultCard(result, language = "vi") {
   c.fillText("XE ÔM CHAOS", 70, 115);
   c.fillStyle = "#ff9664";
   c.font = "bold 24px Arial";
-  c.fillText(
-    en ? "SAIGON · TODAY'S RUN" : "SÀI GÒN · CA CHẠY APP HÔM NAY",
-    73,
-    162,
-  );
+  c.fillText(en ? "SAIGON · TODAY'S RUN" : "SÀI GÒN · CA HÔM NAY", 73, 162);
   c.strokeStyle = "#c9d1b3";
   c.setLineDash([7, 9]);
   c.beginPath();
@@ -69,7 +65,7 @@ export function resultCard(result, language = "vi") {
   c.fillText(
     en
       ? "SHIFT'S OVER. HERE'S HOW IT WENT."
-      : "CA HÔM NAY ĐÃ HẾT. BÁC TÀI COI LẠI MÌNH VỪA CHẠY RA SAO.",
+      : "HẾT CA RỒI. COI LẠI MÌNH VỪA CHẠY RA SAO.",
     73,
     282,
     930,
@@ -94,8 +90,8 @@ export function resultCard(result, language = "vi") {
     : [
         ["TIỀN CUỐC", result.money.toLocaleString("vi-VN") + " ₫"],
         ["NHỊP TỐT NHẤT", "×" + result.bestCombo],
-        ["LÁCH XE", String(result.nearMisses)],
-        ["CUỐC ĐÃ CHỐT", String(result.deliveries)],
+        ["PHA LÁCH", String(result.nearMisses)],
+        ["CUỐC HOÀN THÀNH", String(result.deliveries)],
         ["QUÃNG ĐƯỜNG", Math.round(result.distance) + " m"],
         ["VA QUẸT", String(result.crashes)],
       ];
@@ -114,9 +110,7 @@ export function resultCard(result, language = "vi") {
   c.fillStyle = "#183536";
   c.font = "900 36px Arial";
   c.fillText(
-    en
-      ? "YOUR TURN. FIND A BETTER WAY ↗"
-      : "TỚI LƯỢT BÁC TÀI. THỬ CHẠY CUỐC NÀY ↗",
+    en ? "YOUR TURN. FIND A BETTER WAY ↗" : "TỚI LƯỢT BẠN. CHẠY THỬ CA NÀY ↗",
     106,
     1163,
     860,
@@ -129,7 +123,7 @@ export function resultCard(result, language = "vi") {
   c.fillText(
     en
       ? "SAME SAIGON. DIFFERENT ROUTE."
-      : "Cùng một cuốc, cùng điểm đón và điểm trả. Mỗi bác tài chọn một đường.",
+      : "Cùng một ca, cùng điểm đón và điểm trả. Khác nhau ở cách chọn đường.",
     74,
     1293,
     930,
@@ -148,7 +142,7 @@ export function bindShare(getRun, ui) {
         );
       } else
         el("share-status").textContent = ui.t(
-          "Máy chưa tạo được ảnh. Bác tài thử lại một lần nữa nha.",
+          "Chưa tạo được ảnh. Thử lại một lần nữa nha.",
           "Couldn't make the image. Give it another try.",
         );
     }, "image/png");
@@ -170,14 +164,14 @@ export function bindShare(getRun, ui) {
     const run = getRun(),
       url = challengeUrl(run.seed),
       text = ui.t(
-        `Tôi vừa chạy xong một ca Xe Ôm Chaos: ${run.stats.score} điểm, nhịp ×${run.stats.bestCombo}.\nCùng điểm đón, cùng điểm trả. Thử coi bạn chạy cuốc này có ngon hơn không.`,
+        `Tôi vừa chạy xong một ca Xe Ôm Chaos: ${run.stats.score} điểm, nhịp ×${run.stats.bestCombo}.\nCùng điểm đón, cùng điểm trả. Thử coi bạn kiếm đường có ngon hơn không.`,
         `Just finished a Xe Ôm Chaos run: ${run.stats.score} points, rhythm ×${run.stats.bestCombo}.\nSame Saigon, same traffic. See if you can find a better way through.`,
       );
     if (navigator.share) {
       try {
         await navigator.share({ title: "Xe Ôm Chaos: Saigon", text, url });
         el("share-status").textContent = ui.t(
-          "Bảng chia sẻ đã được mở.",
+          "Đã mở bảng chia sẻ.",
           "Share sheet's open.",
         );
         return;
@@ -189,7 +183,7 @@ export function bindShare(getRun, ui) {
     try {
       await navigator.clipboard.writeText(text + "\n" + url);
       el("share-status").textContent = ui.t(
-        "Lời thách và liên kết đã được sao chép.",
+        "Đã chép lời thách và đường dẫn.",
         "Copied. Send it to somebody brave.",
       );
     } catch {

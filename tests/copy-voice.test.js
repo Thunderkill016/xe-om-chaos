@@ -6,34 +6,34 @@ import { PASSENGERS } from "../src/game/Missions.js";
 import { CHAOS } from "../src/game/ChaosDirector.js";
 import { getMissionGuidance } from "../src/platform/UI.js";
 
-test("Vietnamese copy uses app-driver vocabulary", async () => {
+test("Vietnamese copy separates app voice from rider slang", async () => {
   const html = await readFile("index.html", "utf8");
   for (const phrase of [
-    "App vừa nổ cuốc",
-    "Chạy app",
-    "tài xế",
+    "App vừa phát cuốc",
+    "NHẬN CUỐC",
     "điểm đón",
-    "trả đúng điểm",
-    "cuốc kế",
+    "điểm trả",
+    "đứng điểm",
+    "nổ cuốc",
   ])
     assert.match(html, new RegExp(phrase, "i"));
 
   const run = new Run("copy-voice");
   run.stats.distance = 10;
   const pickup = getMissionGuidance(run, "vi");
-  assert.match(pickup.phase, /Bác tài|tài xế/i);
-  assert.match(pickup.phase, /điểm đón/i);
-  assert.match(pickup.hint, /Cuốc vừa nổ/i);
+  assert.match(pickup.phase, /Đang tới điểm đón/i);
+  assert.match(pickup.hint, /App đã nhận cuốc/i);
+  assert.doesNotMatch(pickup.phase + pickup.hint, /Bác tài/i);
 
   run.missions.phase = "dropoff";
   run.missions.deadline = 20;
   const dropoff = getMissionGuidance(run, "vi");
-  assert.match(dropoff.phase, /Bác tài|tài xế/i);
-  assert.match(dropoff.phase, /điểm trả/i);
+  assert.match(dropoff.phase, /Đang chở khách tới điểm trả/i);
   assert.match(dropoff.hint, /Khách đã lên xe/i);
+  assert.doesNotMatch(dropoff.phase + dropoff.hint, /Bác tài/i);
 });
 
-test("passengers and street events identify a subject", () => {
+test("passengers keep character voice while street events describe the world", () => {
   for (const passenger of PASSENGERS) {
     assert.match(passenger.line, /[.!?]/);
     assert.match(passenger.line, /(anh|em|cô|con)/i);
@@ -41,9 +41,10 @@ test("passengers and street events identify a subject", () => {
 
   for (const event of CHAOS) {
     assert.match(event.vi, /[.!?]/);
+    assert.doesNotMatch(event.vi, /Bác tài|tài xế/i);
     assert.match(
       event.vi,
-      /Bác tài|tài xế|Trời Sài Gòn|Giờ tan tầm|Đoạn phía trước|Đường phía trước|Xe buýt|Đường Bến Gió/i,
+      /Mưa Sài Gòn|Giờ tan tầm|Đoạn đường|rào chắn|Xe buýt|Đường Bến Gió/i,
     );
   }
 });

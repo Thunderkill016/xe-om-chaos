@@ -6,7 +6,7 @@ export const PASSENGERS = [
     id: "office",
     vi: "Khách công sở",
     en: "Office worker",
-    line: "Anh chạy giúp em lẹ chút nha. Em sắp vô họp rồi mà giờ này đường đang kẹt quá.",
+    line: "Anh chạy lẹ giúp em chút nha. Em sắp vô họp rồi, mà giờ này đường lại kẹt.",
     subtitle: "Please tell me we can beat the traffic. I'm late for a meeting.",
     fare: 16000,
     deadline: 40,
@@ -16,7 +16,7 @@ export const PASSENGERS = [
     id: "grandma",
     vi: "Cô Tư",
     en: "Cô Tư",
-    line: "Cô không có gấp đâu con. Con chạy êm êm giùm cô là được.",
+    line: "Cô không gấp đâu con. Con chạy êm êm giùm cô là được rồi.",
     subtitle: "Easy, kid. Nice and smooth for me, okay?",
     fare: 20000,
     deadline: 60,
@@ -26,7 +26,7 @@ export const PASSENGERS = [
     id: "student",
     vi: "Sinh viên",
     en: "Student",
-    line: "Em đi khu này hoài. Anh thấy hẻm nào thông thì quẹo vô, nhiều khi lẹ hơn đường lớn.",
+    line: "Em đi khu này hoài. Anh thấy hẻm nào thông thì quẹo vô nha, nhiều khi lẹ hơn đường lớn.",
     subtitle:
       "I know this part of town. If a hẻm goes through, take it — it's often quicker than the main road.",
     fare: 12000,
@@ -37,7 +37,7 @@ export const PASSENGERS = [
     id: "chaos",
     vi: "Khách khoái cảm giác mạnh",
     en: "Thrill seeker",
-    line: "Em không ngại chạy nhanh đâu. Anh lách gọn thì em khoái, chứ đừng quẹt xe người ta nha.",
+    line: "Em không ngại chạy nhanh đâu. Anh lách gọn thì em khoái, miễn đừng quẹt xe người ta nha.",
     subtitle:
       "Speed doesn't scare me. Just keep the close passes clean and don't hit anybody.",
     fare: 15000,
@@ -117,8 +117,8 @@ export class Missions {
       run.emit(
         "delivery",
         this.deadline >= 0
-          ? "Khách đã tới điểm trả."
-          : "Cuốc này trễ giờ nhưng khách đã tới điểm trả.",
+          ? "Khách đã xuống xe ở điểm trả."
+          : "Cuốc bị trễ, nhưng khách đã xuống xe ở điểm trả.",
         fare,
       );
       const previous = this.destination;
