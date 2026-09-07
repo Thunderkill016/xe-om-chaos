@@ -48,6 +48,35 @@ async function releaseKeys(page, held) {
   held.clear();
 }
 
+function corridorWaypointsToStop(points, stop) {
+  let best = { distance: Infinity, segment: 1 };
+  for (let index = 1; index < points.length; index++) {
+    const a = points[index - 1];
+    const b = points[index];
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
+    const denominator = dx * dx + dz * dz;
+    const t =
+      denominator <= 1e-9
+        ? 0
+        : Math.max(
+            0,
+            Math.min(
+              1,
+              ((stop.x - a.x) * dx + (stop.z - a.z) * dz) / denominator,
+            ),
+          );
+    const x = a.x + dx * t;
+    const z = a.z + dz * t;
+    const distance = Math.hypot(stop.x - x, stop.z - z);
+    if (distance < best.distance) best = { distance, segment: index };
+  }
+  return [
+    ...points.slice(0, best.segment).map(({ x, z }) => ({ x, z })),
+    { x: stop.x, z: stop.z, stop: true },
+  ];
+}
+
 const browser = await chromium.launch({
   headless: true,
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
@@ -240,7 +269,10 @@ try {
   );
   check("corridor pickup boards through the normal stop dwell rule", true);
 
-  const corridorPoints = REAL_HCM_CORRIDOR.points.map(({ x, z }) => ({ x, z }));
+  const corridorPoints = corridorWaypointsToStop(
+    REAL_HCM_CORRIDOR.points,
+    REAL_HCM_CORRIDOR_STOPS[1],
+  );
   let corridorWaypoint = 1;
   let midpointCaptured = false;
   const corridorHeld = new Set();
@@ -271,20 +303,21 @@ try {
     const distance = Math.hypot(target.x - p.x, target.z - p.z);
     const targetAngle = Math.atan2(target.x - p.x, target.z - p.z) - p.angle;
     const delta = Math.atan2(Math.sin(targetAngle), Math.cos(targetAngle));
-    if (distance < 2.4) {
+    if (!target.stop && distance < 2.4) {
       corridorWaypoint += 1;
       continue;
     }
 
-    const finalSegment = corridorWaypoint >= corridorPoints.length - 1;
     const wantedSpeed =
-      finalSegment && distance < 5
+      target.stop && distance < 4
         ? 0
         : Math.abs(delta) > 0.55
           ? 1.5
           : Math.abs(delta) > 0.3
             ? 4.5
-            : 7;
+            : distance < 8
+              ? 4.5
+              : 7;
     const desired = new Set([
       ...(p.speed < wantedSpeed ? ["w"] : []),
       ...(p.speed > wantedSpeed + 0.8 ? ["s"] : []),
