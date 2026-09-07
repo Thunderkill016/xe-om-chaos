@@ -12,8 +12,8 @@
     "codex": "node scripts/codex-agent.mjs",
     "smoke": "node scripts/smoke.mjs",
     "evaluate:routes": "node scripts/evaluate-routes.mjs",
-    "format": "prettier --write src tests scripts index.html style.css *.json *.md",
-    "format:check": "prettier --check src tests scripts index.html style.css *.json *.md",
+    "format": "prettier --write src tests scripts index.html en/index.html style.css *.json *.md",
+    "format:check": "prettier --check src tests scripts index.html en/index.html style.css *.json *.md",
     "quality": "npm run typecheck && npm test && npm run format:check",
     "package": "node scripts/package.mjs"
   },
