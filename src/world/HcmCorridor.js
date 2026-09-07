@@ -671,8 +671,13 @@ function corridorTrafficPose(vehicle) {
 }
 
 export function worldTrafficPose(vehicle, time) {
-  if (vehicle.route === REAL_HCM_CORRIDOR.id)
-    return corridorTrafficPose(vehicle);
+  if (vehicle.route === REAL_HCM_CORRIDOR.id) {
+    const pose = corridorTrafficPose(vehicle);
+    vehicle.x = pose.x;
+    vehicle.z = pose.z;
+    vehicle.angle = pose.angle;
+    return pose;
+  }
   return mapTrafficPose(vehicle, time);
 }
 
