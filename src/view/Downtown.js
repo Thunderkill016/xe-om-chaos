@@ -29,13 +29,7 @@ const LANDMARKS = {
 };
 
 const FACADES = [
-  0x8a8a82,
-  0xa07f67,
-  0xc2b9a3,
-  0x536d78,
-  0x716f66,
-  0xc9c3b4,
-  0x667e7b,
+  0x8a8a82, 0xa07f67, 0xc2b9a3, 0x536d78, 0x716f66, 0xc9c3b4, 0x667e7b,
 ];
 const WINDOW = 0x88a9ae;
 const WARM_WINDOW = 0xe1b267;
@@ -80,8 +74,26 @@ export function addDowntownCinematic(view) {
     view.mesh(parent, colour, x, y, z, w, h, d, geometry);
 
   const tree = (x, z, scale = 1) => {
-    box(0x655241, x, 1.35 * scale, z, 0.22 * scale, 2.7 * scale, 0.22 * scale, view.cylinder);
-    box(GREEN, x, 3.3 * scale, z, 1.6 * scale, 1.8 * scale, 1.6 * scale, view.sphere);
+    box(
+      0x655241,
+      x,
+      1.35 * scale,
+      z,
+      0.22 * scale,
+      2.7 * scale,
+      0.22 * scale,
+      view.cylinder,
+    );
+    box(
+      GREEN,
+      x,
+      3.3 * scale,
+      z,
+      1.6 * scale,
+      1.8 * scale,
+      1.6 * scale,
+      view.sphere,
+    );
   };
 
   const windowBands = (parent, width, depth, height, front = -1) => {
@@ -106,7 +118,16 @@ export function addDowntownCinematic(view) {
   const tower = (point, width, depth, height, colour, angle = 0) => {
     const group = groupAt(point, angle);
     localBox(group, colour, 0, height * 0.5, 0, width, height, depth);
-    localBox(group, 0x465d62, 0, height + 0.25, 0, width + 0.35, 0.5, depth + 0.35);
+    localBox(
+      group,
+      0x465d62,
+      0,
+      height + 0.25,
+      0,
+      width + 0.35,
+      0.5,
+      depth + 0.35,
+    );
     windowBands(group, width, depth, height);
     return group;
   };
@@ -139,11 +160,21 @@ export function addDowntownCinematic(view) {
     box(WARM_WINDOW, 93.2, 4.3, z + 3.4, 0.32, 0.22, 0.32, view.sphere);
   }
 
-  const benThanh = outsideGameplay(project(LANDMARKS.benThanh.lat, LANDMARKS.benThanh.lon));
-  const bitexco = outsideGameplay(project(LANDMARKS.bitexco.lat, LANDMARKS.bitexco.lon));
-  const nguyenHue = outsideGameplay(project(LANDMARKS.nguyenHue.lat, LANDMARKS.nguyenHue.lon));
-  const cityHall = outsideGameplay(project(LANDMARKS.cityHall.lat, LANDMARKS.cityHall.lon));
-  const baSon = outsideGameplay(project(LANDMARKS.baSon.lat, LANDMARKS.baSon.lon));
+  const benThanh = outsideGameplay(
+    project(LANDMARKS.benThanh.lat, LANDMARKS.benThanh.lon),
+  );
+  const bitexco = outsideGameplay(
+    project(LANDMARKS.bitexco.lat, LANDMARKS.bitexco.lon),
+  );
+  const nguyenHue = outsideGameplay(
+    project(LANDMARKS.nguyenHue.lat, LANDMARKS.nguyenHue.lon),
+  );
+  const cityHall = outsideGameplay(
+    project(LANDMARKS.cityHall.lat, LANDMARKS.cityHall.lon),
+  );
+  const baSon = outsideGameplay(
+    project(LANDMARKS.baSon.lat, LANDMARKS.baSon.lon),
+  );
 
   // Bến Thành silhouette: broad market hall, warm roof and clock tower. It sits
   // on the same projected bearing as the real market but remains just outside
@@ -193,8 +224,27 @@ export function addDowntownCinematic(view) {
     localBox(g, 0x506e78, 0, 28, 0, 12, 56, 9, view.cylinder);
     localBox(g, 0x668890, 0, 61, 0, 8.2, 10, 6.2, view.cylinder);
     for (let y = 6; y < 58; y += 4.2)
-      localBox(g, y % 8.4 < 1 ? WARM_WINDOW : WINDOW, 0, y, -4.58, 7.5, 0.5, 0.08);
-    const pad = localBox(g, 0x899d9c, 7.4, 40.5, -0.8, 8.5, 0.7, 4.2, view.cylinder);
+      localBox(
+        g,
+        y % 8.4 < 1 ? WARM_WINDOW : WINDOW,
+        0,
+        y,
+        -4.58,
+        7.5,
+        0.5,
+        0.08,
+      );
+    const pad = localBox(
+      g,
+      0x899d9c,
+      7.4,
+      40.5,
+      -0.8,
+      8.5,
+      0.7,
+      4.2,
+      view.cylinder,
+    );
     pad.rotation.z = Math.PI / 2;
     localBox(g, 0x384f54, 4.1, 40.5, -0.8, 5, 0.7, 0.8);
   }
@@ -207,7 +257,14 @@ export function addDowntownCinematic(view) {
       z: baSon.z + Math.sin(angle) * (i * 6.5),
     };
     const h = 28 + i * 7 + rng() * 8;
-    tower(point, 9 + (i % 2) * 3, 10, h, i % 2 ? 0x607b83 : 0x4e6d78, -0.18 + i * 0.05);
+    tower(
+      point,
+      9 + (i % 2) * 3,
+      10,
+      h,
+      i % 2 ? 0x607b83 : 0x4e6d78,
+      -0.18 + i * 0.05,
+    );
   }
 
   // OSM-style outer massing. The supplied Blender generator uses real building
@@ -228,7 +285,16 @@ export function addDowntownCinematic(view) {
     const colour = FACADES[Math.floor(rng() * FACADES.length)];
     const g = tower({ x, z }, w, d, h, colour, rng() * 0.14 - 0.07);
     if (h > 26 && rng() < 0.7) {
-      localBox(g, WARM_WINDOW, 0, Math.min(h - 3, 16 + rng() * 8), -d / 2 - 0.07, w * 0.58, 0.5, 0.08);
+      localBox(
+        g,
+        WARM_WINDOW,
+        0,
+        Math.min(h - 3, 16 + rng() * 8),
+        -d / 2 - 0.07,
+        w * 0.58,
+        0.5,
+        0.08,
+      );
     }
   }
 
