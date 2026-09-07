@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { CONFIG } from "../game/config.js";
-import { BUILDING_RECTS } from "../world/map.js";
 import { colouredGeometry, vertexMaterial } from "./batch.js";
 import { buildCity } from "./City.js";
 import { Effects } from "./Effects.js";
@@ -271,8 +270,9 @@ export class Scene {
     this.marker.material.color.setHex(markerColour);
     this.pin.material.color.setHex(markerColour);
     if (playing) {
-      // Keep the rider visually present at speed instead of pulling the camera far away.
-      // Forward look-ahead grows faster than follow distance so traffic remains readable.
+      // Keep the rider visible at low speed, then grow anticipation distance as
+      // speed rises. The camera position itself is clipped against every visual
+      // building footprint so rendered facades cannot swallow the chase camera.
       const speedRatio = Math.min(p.speed / CONFIG.boostSpeed, 1);
       const followDistance = 8.9 + speedRatio * 1.9;
       const cameraHeight = 4.9 + speedRatio * 0.8;
@@ -284,13 +284,13 @@ export class Scene {
       const resolvedCamera = resolveCameraPosition(
         { x: p.x, z: p.z },
         { x: this.desired.x, z: this.desired.z },
-        BUILDING_RECTS,
+        this.buildingFootprints,
       );
       this.desired.x = resolvedCamera.x;
       this.desired.z = resolvedCamera.z;
       const blend = 1 - Math.exp(-dt * 6);
       this.camera.position.lerp(this.desired, blend);
-      const lookAhead = 12.5 + speedRatio * 8.5;
+      const lookAhead = 4 + speedRatio * 17;
       this.lookAt.set(
         p.x + Math.sin(p.angle) * lookAhead,
         1,
