@@ -71,7 +71,9 @@ function queryFor(south, west, north, east) {
   return `[out:json][timeout:25];(way["building"](${bbox});way["highway"](${bbox});way["waterway"](${bbox});way["natural"="water"](${bbox});way["leisure"="park"](${bbox});way["landuse"="grass"](${bbox});way["landuse"="recreation_ground"](${bbox}););out body;>;out skel qt;`;
 }
 async function fetchTile(south, west, north, east, index, total) {
-  const body = new URLSearchParams({ data: queryFor(south, west, north, east) });
+  const body = new URLSearchParams({
+    data: queryFor(south, west, north, east),
+  });
   let lastError;
   for (const endpoint of ENDPOINTS) {
     const controller = new AbortController();
@@ -88,10 +90,13 @@ async function fetchTile(south, west, north, east, index, total) {
         body,
         signal: controller.signal,
       });
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      if (!response.ok)
+        throw new Error(`${response.status} ${response.statusText}`);
       const data = await response.json();
       clearTimeout(timeout);
-      console.log(`[OSM ${index}/${total}] OK ${data.elements?.length ?? 0} elements`);
+      console.log(
+        `[OSM ${index}/${total}] OK ${data.elements?.length ?? 0} elements`,
+      );
       return data;
     } catch (error) {
       clearTimeout(timeout);
@@ -100,7 +105,9 @@ async function fetchTile(south, west, north, east, index, total) {
       await sleep(900);
     }
   }
-  throw new Error(`Could not fetch tile ${index}/${total}: ${lastError?.message || lastError}`);
+  throw new Error(
+    `Could not fetch tile ${index}/${total}: ${lastError?.message || lastError}`,
+  );
 }
 async function fetchOsm() {
   const latStep = (NORTH - SOUTH) / TILE_ROWS;
@@ -131,7 +138,9 @@ async function fetchOsm() {
           merged.set(`${element.type}:${element.id}`, element);
       } catch (error) {
         failedTiles++;
-        console.warn(`[OSM ${index}/${total}] SKIPPED: ${error?.message || error}`);
+        console.warn(
+          `[OSM ${index}/${total}] SKIPPED: ${error?.message || error}`,
+        );
       }
       if (index < total) await sleep(550);
     }
@@ -228,7 +237,12 @@ function buildData(elements) {
     if (points.length < 2) continue;
     if (tags.building && points.length >= 3) {
       const bounds = orientedBounds(points);
-      if (!bounds || bounds.w * bounds.d < 28 || bounds.w > 170 || bounds.d > 170)
+      if (
+        !bounds ||
+        bounds.w * bounds.d < 28 ||
+        bounds.w > 170 ||
+        bounds.d > 170
+      )
         continue;
       const h = buildingHeight(tags, way.id);
       buildings.push([

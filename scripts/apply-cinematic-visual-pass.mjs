@@ -109,9 +109,15 @@ for (const [path, href] of [
     const marker = '<link rel="stylesheet" href="./style.css" />';
     const enMarker = '<link rel="stylesheet" href="../style.css" />';
     if (input.includes(marker))
-      return input.replace(marker, `${marker}\n    <link rel="stylesheet" href="${href}" />`);
+      return input.replace(
+        marker,
+        `${marker}\n    <link rel="stylesheet" href="${href}" />`,
+      );
     if (input.includes(enMarker))
-      return input.replace(enMarker, `${enMarker}\n    <link rel="stylesheet" href="${href}" />`);
+      return input.replace(
+        enMarker,
+        `${enMarker}\n    <link rel="stylesheet" href="${href}" />`,
+      );
     throw new Error(`Stylesheet marker missing in ${path}`);
   });
 }

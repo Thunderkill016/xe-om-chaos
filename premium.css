@@ -18,13 +18,28 @@ body::before {
   pointer-events: none;
   z-index: 1;
   background:
-    linear-gradient(90deg, rgba(5, 10, 11, 0.32) 0%, transparent 34%, transparent 72%, rgba(5, 10, 11, 0.08) 100%),
-    linear-gradient(180deg, rgba(5, 9, 10, 0.13), transparent 32%, rgba(5, 9, 10, 0.16));
+    linear-gradient(
+      90deg,
+      rgba(5, 10, 11, 0.32) 0%,
+      transparent 34%,
+      transparent 72%,
+      rgba(5, 10, 11, 0.08) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 10, 0.13),
+      transparent 32%,
+      rgba(5, 9, 10, 0.16)
+    );
 }
 
 .vignette {
   opacity: 0.44;
-  background: radial-gradient(circle at 52% 45%, transparent 48%, rgba(5, 8, 9, 0.44) 100%);
+  background: radial-gradient(
+    circle at 52% 45%,
+    transparent 48%,
+    rgba(5, 8, 9, 0.44) 100%
+  );
 }
 
 .topbar {
@@ -70,7 +85,11 @@ body::before {
   padding: 22px 24px 24px;
   border: 1px solid var(--premium-line);
   border-radius: 22px;
-  background: linear-gradient(145deg, rgba(10, 15, 16, 0.8), rgba(12, 20, 20, 0.56));
+  background: linear-gradient(
+    145deg,
+    rgba(10, 15, 16, 0.8),
+    rgba(12, 20, 20, 0.56)
+  );
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
   backdrop-filter: blur(18px) saturate(1.18);
 }
@@ -316,7 +335,11 @@ body.playing .wordmark {
 }
 
 @media (max-width: 760px) {
-  .topbar { left: 14px; right: 14px; top: 12px; }
+  .topbar {
+    left: 14px;
+    right: 14px;
+    top: 12px;
+  }
   .welcome {
     left: 14px;
     right: 14px;
@@ -326,21 +349,54 @@ body.playing .wordmark {
     max-width: none;
     padding: 18px;
   }
-  .welcome h1 { font-size: clamp(48px, 16vw, 72px); }
-  .welcome .tagline { font-size: 13px; }
-  .postcard { display: none; }
+  .welcome h1 {
+    font-size: clamp(48px, 16vw, 72px);
+  }
+  .welcome .tagline {
+    font-size: 13px;
+  }
+  .postcard {
+    display: none;
+  }
   .run-strip {
     top: 62px;
     min-width: 0;
     width: calc(100vw - 28px);
     justify-content: space-around;
   }
-  .mission-stack { left: 14px; top: 114px; width: calc(100vw - 28px); }
-  .flow-panel { display: none; }
-  .map-panel { left: 14px; bottom: 128px; padding: 7px; }
-  #minimap { width: 124px; height: 124px; }
-  .speed-panel { right: 14px; bottom: 128px; min-width: 108px; padding: 13px; }
-  .speed-panel strong { font-size: 42px; }
-  .ride-hint { bottom: 112px; max-width: calc(100vw - 32px); font-size: 11px; }
-  .reaction { bottom: 164px; max-width: calc(100vw - 40px); }
+  .mission-stack {
+    left: 14px;
+    top: 114px;
+    width: calc(100vw - 28px);
+  }
+  .flow-panel {
+    display: none;
+  }
+  .map-panel {
+    left: 14px;
+    bottom: 128px;
+    padding: 7px;
+  }
+  #minimap {
+    width: 124px;
+    height: 124px;
+  }
+  .speed-panel {
+    right: 14px;
+    bottom: 128px;
+    min-width: 108px;
+    padding: 13px;
+  }
+  .speed-panel strong {
+    font-size: 42px;
+  }
+  .ride-hint {
+    bottom: 112px;
+    max-width: calc(100vw - 32px);
+    font-size: 11px;
+  }
+  .reaction {
+    bottom: 164px;
+    max-width: calc(100vw - 40px);
+  }
 }
