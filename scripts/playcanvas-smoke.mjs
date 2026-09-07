@@ -46,6 +46,11 @@ try {
     renderer: window.xeom.view.rendererKind,
     slice: window.xeom.view.realHcmCorridorStats?.verticalSlice,
     source: window.xeom.view.realHcmCorridorStats?.source,
+    baseStats: window.xeom.view.authoredBaseMapStats,
+    baseMap: Boolean(
+      window.xeom.view.app.root.findByName("AUTHORED_BASE_MAP"),
+    ),
+    hem26: Boolean(window.xeom.view.app.root.findByName("HEM_26_PLAYCANVAS")),
     benThanh: Boolean(window.xeom.view.app.root.findByName("CHO_BEN_THANH")),
     cityHall: Boolean(
       window.xeom.view.app.root.findByName("SAIGON_CITY_HALL_SILHOUETTE"),
@@ -57,6 +62,11 @@ try {
     "PlayCanvas renderer boots as an opt-in engine",
     boot.renderer === "playcanvas",
   );
+  check(
+    "PlayCanvas renders the authored gameplay map around the player origin",
+    boot.baseMap && boot.baseStats?.buildings > 0,
+  );
+  check("Hẻm 26 exists in the PlayCanvas gameplay world", boot.hem26);
   check(
     "PlayCanvas scene uses the Bến Thành → Lê Lợi → Nguyễn Huệ vertical slice",
     boot.slice?.includes("BẾN THÀNH") && boot.source?.includes("OpenStreetMap"),
@@ -84,6 +94,13 @@ try {
   const live = await page.evaluate(() => ({
     playing: window.xeom.state.playing,
     speed: window.xeom.run.player.speed,
+    player: {
+      x: window.xeom.run.player.x,
+      z: window.xeom.run.player.z,
+    },
+    baseMap: Boolean(
+      window.xeom.view.app.root.findByName("AUTHORED_BASE_MAP"),
+    ),
     fps: window.xeom.view.fps,
     renderer: document.documentElement.dataset.renderer,
   }));
@@ -91,6 +108,10 @@ try {
   check(
     "PlayCanvas mode enters the same gameplay simulation",
     live.playing && live.speed > 0,
+  );
+  check(
+    "PlayCanvas keeps the authored map mounted while the player moves",
+    live.baseMap && Number.isFinite(live.player.x) && Number.isFinite(live.player.z),
   );
   check(
     "PlayCanvas mode keeps the renderer selection visible to diagnostics",
