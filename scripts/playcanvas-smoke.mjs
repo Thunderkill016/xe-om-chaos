@@ -47,9 +47,7 @@ try {
     slice: window.xeom.view.realHcmCorridorStats?.verticalSlice,
     source: window.xeom.view.realHcmCorridorStats?.source,
     baseStats: window.xeom.view.authoredBaseMapStats,
-    baseMap: Boolean(
-      window.xeom.view.app.root.findByName("AUTHORED_BASE_MAP"),
-    ),
+    baseMap: Boolean(window.xeom.view.app.root.findByName("AUTHORED_BASE_MAP")),
     hem26: Boolean(window.xeom.view.app.root.findByName("HEM_26_PLAYCANVAS")),
     benThanh: Boolean(window.xeom.view.app.root.findByName("CHO_BEN_THANH")),
     cityHall: Boolean(
@@ -98,9 +96,7 @@ try {
       x: window.xeom.run.player.x,
       z: window.xeom.run.player.z,
     },
-    baseMap: Boolean(
-      window.xeom.view.app.root.findByName("AUTHORED_BASE_MAP"),
-    ),
+    baseMap: Boolean(window.xeom.view.app.root.findByName("AUTHORED_BASE_MAP")),
     fps: window.xeom.view.fps,
     renderer: document.documentElement.dataset.renderer,
   }));
