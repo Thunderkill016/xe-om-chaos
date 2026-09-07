@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#162c2d" />
     <meta
       name="description"
-      content="Chạy một cuốc xe ôm giữa Sài Gòn: né giờ tan tầm, kiếm hẻm thông và đưa khách tới nơi cho trọn cuốc."
+      content="Chạy một cuốc xe ôm giữa Sài Gòn: app nổ cuốc, bác tài tới điểm đón, né giờ tan tầm và đưa khách tới đúng điểm trả."
     />
     <title>XE ÔM CHAOS · SAIGON</title>
     <link
@@ -43,17 +43,19 @@
     <main>
       <section id="welcome" class="welcome">
         <div class="edition">
-          <span class="live-dot"></span> Sài Gòn đang đông xe. Khách đang chờ
-          ngoài kia.
+          <span class="live-dot"></span> App vừa nổ cuốc đầu tiên. Khách đang
+          đứng chờ ở điểm đón.
         </div>
         <h1>XE ÔM<br /><span>CHAOS.</span></h1>
         <div class="city-stamp"><span>↗</span> SÀI GÒN</div>
         <p class="tagline">
-          Đường lớn kẹt thì kiếm hẻm.<br />Miễn đưa khách tới nơi là được.
+          Bác tài chạy app ở Sài Gòn thì quen cảnh này rồi:<br />đường lớn kẹt
+          thì canh hẻm thông mà luồn. Đón đúng khách, trả đúng điểm, xong cuốc
+          mới tính cuốc kế.
         </p>
         <div class="start-actions">
           <button id="start" class="primary">NỔ MÁY, ĐI THÔI ↗</button
-          ><span>3 phút một ca · mỗi ngày một chuyến khác</span>
+          ><span>Một ca 3 phút · app sẽ nổ nhiều cuốc liên tiếp</span>
         </div>
         <div class="quick-controls">
           <span><kbd>W A S D</kbd> <span>Lái xe</span></span
@@ -64,8 +66,8 @@
       </section>
       <div id="postcard" class="postcard">
         <span>10°46′ N · 106°41′ E</span
-        ><strong>TRỜI SÀI GÒN:<br />NẮNG ĐÓ, MƯA ĐÓ.</strong
-        ><small>CÒN KHÁCH THÌ LÚC NÀO CŨNG ĐANG VỘI.</small>
+        ><strong>CÓ HÔM BÁC TÀI ĐỨNG CHỜ<br />MƯỜI PHÚT VẪN CHƯA NỔ CUỐC.</strong
+        ><small>CÓ HÔM VỪA TRẢ KHÁCH XONG, APP ĐÃ GỌI CUỐC KẾ.</small>
       </div>
       <section id="hud" hidden>
         <div class="run-strip">
@@ -172,13 +174,13 @@
         </form>
       </dialog>
       <dialog id="pause-dialog">
-        <h2>TẠM DỪNG NHA</h2>
+        <h2>BÁC TÀI ĐANG TẠM NGHỈ</h2>
         <button id="resume" class="primary">CHẠY TIẾP ↗</button
         ><button id="restart-pause" class="secondary">Chạy lại từ đầu</button>
       </dialog>
       <dialog id="results">
         <div class="result-head">XE ÔM CHAOS <span>SÀI GÒN</span></div>
-        <p class="eyebrow">Hết ca rồi. Coi hôm nay chạy ra sao.</p>
+        <p class="eyebrow">Ca hôm nay hết rồi. Bác tài coi lại mấy cuốc vừa chạy.</p>
         <h2 id="result-title"></h2>
         <div class="result-score" id="result-score"></div>
         <p id="best-message"></p>
@@ -186,7 +188,7 @@
         <p class="challenge-code" id="challenge-code"></p>
         <button id="again" class="primary">CHẠY THÊM CUỐC NỮA ↗</button>
         <div class="result-buttons">
-          <button id="share">Gửi bạn coi</button
+          <button id="share">Gửi cuốc này cho bạn</button
           ><button id="save-card">Lưu ảnh</button
           ><button id="save-replay">Lưu lượt chạy</button>
         </div>
@@ -196,7 +198,7 @@
       <pre id="debug" hidden></pre>
     </main>
     <footer id="footer">
-      <span>SÀI GÒN CÒN ĐÔNG. MAI CHẠY TIẾP.</span
+      <span>Bác tài nghỉ tay chút. Mai app còn nổ cuốc tiếp.</span
       ><span>BẢN THỬ NỘI BỘ · 01</span>
     </footer>
     <script type="module" src="./src/main.js"></script>
