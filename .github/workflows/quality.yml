@@ -18,6 +18,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Canonical format probe
+        run: npx prettier --write src/view/PlayCanvasBaseMap.js scripts/playcanvas-smoke.mjs
+      - name: Upload canonical PlayCanvas files
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-playcanvas-format
+          path: |
+            src/view/PlayCanvasBaseMap.js
+            scripts/playcanvas-smoke.mjs
+          if-no-files-found: error
       - name: Verify committed HCMC context exists
         run: |
           test -s src/world/hcm-downtown-data.js
