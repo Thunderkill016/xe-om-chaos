@@ -91,14 +91,10 @@ export function addRealHcmContext(view) {
   const data = HCMC_OSM_DATA;
   if (!data.buildings.length && !data.roads.length) return null;
 
-  /** @type {OsmWater[]} */
-  const waterFeatures = data.water;
-  /** @type {OsmPoint[][]} */
-  const greenFeatures = data.green;
-  /** @type {OsmRoad[]} */
-  const roads = data.roads;
-  /** @type {OsmBuilding[]} */
-  const buildings = data.buildings;
+  const waterFeatures = /** @type {OsmWater[]} */ (data.water);
+  const greenFeatures = /** @type {OsmPoint[][]} */ (data.green);
+  const roads = /** @type {OsmRoad[]} */ (data.roads);
+  const buildings = /** @type {OsmBuilding[]} */ (data.buildings);
 
   const solid = new THREE.Group();
   solid.name = "HCMC_REAL_OSM_SOURCE";
