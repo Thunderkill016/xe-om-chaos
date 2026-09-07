@@ -19,17 +19,17 @@ function download(blob, filename) {
 }
 function cardTitle(result, language) {
   if (language === "en") {
-    if (result.alleys >= 3) return "ALLEY ACE";
-    if (result.nearMisses >= 12) return "TRAFFIC DANCER";
-    if (result.horns >= 20) return "HORN HAPPY";
-    if (result.crashes >= 5) return "STILL RIDING";
-    return "SAIGON RIDER";
+    if (result.alleys >= 3) return "YOU KNOW THE ALLEYS";
+    if (result.nearMisses >= 12) return "THAT WAS TIGHT";
+    if (result.horns >= 20) return "EASY ON THE HORN";
+    if (result.crashes >= 5) return "BIKE'S SEEN BETTER DAYS";
+    return "SOLID SAIGON RUN";
   }
-  if (result.alleys >= 3) return "TRÙM HẺM";
-  if (result.nearMisses >= 12) return "LÁCH NHƯ NƯỚC";
-  if (result.horns >= 20) return "CÒI TRƯỞNG";
-  if (result.crashes >= 5) return "NGÃ VẪN CHẠY";
-  return "TAY LÁI SÀI GÒN";
+  if (result.alleys >= 3) return "RÀNH HẺM THIỆT";
+  if (result.nearMisses >= 12) return "LÁCH CŨNG NGỌT";
+  if (result.horns >= 20) return "CÒI HƠI NHIỀU NHA";
+  if (result.crashes >= 5) return "XE HƠI XƯỚC RỒI";
+  return "CUỐC NÀY ỔN ÁP";
 }
 export function resultCard(result, language = "vi") {
   const en = language === "en";
@@ -52,7 +52,7 @@ export function resultCard(result, language = "vi") {
   c.fillText("XE ÔM CHAOS", 70, 115);
   c.fillStyle = "#ff9664";
   c.font = "bold 24px Arial";
-  c.fillText(en ? "SAIGON · DAILY RUN" : "SÀI GÒN · CUỐC HÔM NAY", 73, 162);
+  c.fillText(en ? "SAIGON · TODAY'S RUN" : "SÀI GÒN · CUỐC HÔM NAY", 73, 162);
   c.strokeStyle = "#c9d1b3";
   c.setLineDash([7, 9]);
   c.beginPath();
@@ -63,7 +63,7 @@ export function resultCard(result, language = "vi") {
   c.font = "bold 31px Arial";
   c.fillStyle = "#f5edda";
   c.fillText(
-    en ? "SHIFT OVER. STORY WORTH TELLING." : "HẾT CA. CÓ CHUYỆN ĐỂ KỂ.",
+    en ? "SHIFT'S OVER. HERE'S HOW IT WENT." : "HẾT CA RỒI. COI CHẠY RA SAO.",
     73,
     282,
   );
@@ -78,19 +78,19 @@ export function resultCard(result, language = "vi") {
   const cells = en
     ? [
         ["FARES", result.money.toLocaleString("en-US") + " ₫"],
-        ["BEST FLOW", "×" + result.bestCombo],
-        ["NEAR MISSES", String(result.nearMisses)],
-        ["DELIVERIES", String(result.deliveries)],
+        ["BEST RHYTHM", "×" + result.bestCombo],
+        ["CLOSE PASSES", String(result.nearMisses)],
+        ["RIDES DONE", String(result.deliveries)],
         ["DISTANCE", Math.round(result.distance) + " m"],
         ["CRASHES", String(result.crashes)],
       ]
     : [
-        ["TIỀN CƯỚC", result.money.toLocaleString("vi-VN") + " ₫"],
+        ["TIỀN CUỐC", result.money.toLocaleString("vi-VN") + " ₫"],
         ["NHỊP TỐT NHẤT", "×" + result.bestCombo],
         ["LÁCH XE", String(result.nearMisses)],
-        ["CUỐC ĐÃ XONG", String(result.deliveries)],
-        ["QUÃNG ĐƯỜNG", Math.round(result.distance) + " m"],
-        ["VA CHẠM", String(result.crashes)],
+        ["CUỐC XONG", String(result.deliveries)],
+        ["ĐÃ CHẠY", Math.round(result.distance) + " m"],
+        ["VA QUẸT", String(result.crashes)],
       ];
   cells.forEach(([label, value], i) => {
     const x = 76 + (i % 3) * 330,
@@ -106,7 +106,7 @@ export function resultCard(result, language = "vi") {
   c.fillRect(70, 1101, 940, 94);
   c.fillStyle = "#183536";
   c.font = "900 36px Arial";
-  c.fillText(en ? "BEAT MY SAIGON RUN ↗" : "THỬ VƯỢT CUỐC NÀY ↗", 106, 1163);
+  c.fillText(en ? "YOUR TURN. FIND A BETTER WAY ↗" : "TỚI LƯỢT BẠN. KIẾM ĐƯỜNG NGON HƠN ↗", 106, 1163, 860);
   c.fillStyle = "#f5edda";
   c.font = "22px monospace";
   c.fillText(result.seed + " UTC · " + CONFIG.version, 74, 1254);
@@ -114,8 +114,8 @@ export function resultCard(result, language = "vi") {
   c.fillStyle = "#acc3b5";
   c.fillText(
     en
-      ? "LOCAL SCORE · SAME CITY. YOUR ROUTE."
-      : "ĐIỂM TRÊN MÁY · CÙNG THÀNH PHỐ. TỰ CHỌN ĐƯỜNG.",
+      ? "SAME SAIGON. DIFFERENT ROUTE."
+      : "CÙNG MỘT SÀI GÒN. COI AI KIẾM ĐƯỜNG NGON HƠN.",
     74,
     1293,
   );
@@ -128,13 +128,13 @@ export function bindShare(getRun, ui) {
       if (blob) {
         download(blob, "xe-om-" + result.seed + ".png");
         el("share-status").textContent = ui.t(
-          "Đã tạo ảnh kết quả.",
-          "Result card ready.",
+          "Lưu ảnh xong rồi.",
+          "Image saved.",
         );
       } else
         el("share-status").textContent = ui.t(
-          "Chưa tạo được ảnh. Thử lại nhé.",
-          "Couldn't create the image. Try again.",
+          "Không tạo được ảnh, thử lại nha.",
+          "Couldn't make the image. Give it another try.",
         );
     }, "image/png");
   };
@@ -147,23 +147,23 @@ export function bindShare(getRun, ui) {
       "xe-om-run-" + run.seed + ".json",
     );
     el("share-status").textContent = ui.t(
-      "Đã lưu dữ liệu lượt chơi.",
-      "Run data saved.",
+      "Lưu lượt chạy xong rồi.",
+      "Run saved.",
     );
   };
   el("share").onclick = async () => {
     const run = getRun(),
       url = challengeUrl(run.seed),
       text = ui.t(
-        `XE ÔM CHAOS · ${run.stats.score} điểm · NHỊP ×${run.stats.bestCombo}\nThử vượt cuốc Sài Gòn này xem!`,
-        `XE ÔM CHAOS · ${run.stats.score} points · FLOW ×${run.stats.bestCombo}\nBeat my Saigon run!`,
+        `Vừa làm một cuốc Xe Ôm Chaos: ${run.stats.score} điểm, nhịp ×${run.stats.bestCombo}.\nCùng Sài Gòn đó, thử coi bạn kiếm đường ngon hơn không.`,
+        `Just finished a Xe Ôm Chaos run: ${run.stats.score} points, rhythm ×${run.stats.bestCombo}.\nSame Saigon, same traffic. See if you can find a better way through.`,
       );
     if (navigator.share) {
       try {
         await navigator.share({ title: "Xe Ôm Chaos: Saigon", text, url });
         el("share-status").textContent = ui.t(
-          "Đã mở bảng chia sẻ.",
-          "Share sheet opened.",
+          "Mở chỗ chia sẻ rồi đó.",
+          "Share sheet's open.",
         );
         return;
       } catch (error) {
@@ -174,8 +174,8 @@ export function bindShare(getRun, ui) {
     try {
       await navigator.clipboard.writeText(text + "\n" + url);
       el("share-status").textContent = ui.t(
-        "Đã sao chép lời thách đấu và liên kết.",
-        "Challenge and link copied.",
+        "Sao chép xong rồi.",
+        "Copied. Send it to somebody brave.",
       );
     } catch {
       el("share-status").textContent = text + "\n" + url;
