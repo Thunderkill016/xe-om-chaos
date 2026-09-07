@@ -129,10 +129,7 @@ function samplePolyline(distanceValue) {
       const t =
         segment.length <= 1e-6
           ? 0
-          : Math.max(
-              0,
-              Math.min(1, (target - travelled) / segment.length),
-            );
+          : Math.max(0, Math.min(1, (target - travelled) / segment.length));
       return {
         x: a.x + segment.dx * t,
         z: a.z + segment.dz * t,
@@ -221,7 +218,11 @@ function addStreetFurniture(view, parent) {
   let parkedScooters = 0;
   const offset = REAL_HCM_CORRIDOR.shoulderWidth * 0.5 + 1.05;
   let index = 0;
-  for (let distance = 8; distance < REAL_HCM_CORRIDOR.length - 5; distance += 11) {
+  for (
+    let distance = 8;
+    distance < REAL_HCM_CORRIDOR.length - 5;
+    distance += 11
+  ) {
     const point = samplePolyline(distance);
     const treeSide = index % 2 === 0 ? 1 : -1;
     tree(
@@ -372,7 +373,11 @@ function addBuilding(view, parent, building, index) {
   awning(view, group, building, face, index % 3 === 0 ? 0xd89b5b : 0x6d8b7c);
 
   let windowRows = 0;
-  for (let floor = 4.5; floor < building.h - 1.1 && windowRows < 5; floor += 3.1) {
+  for (
+    let floor = 4.5;
+    floor < building.h - 1.1 && windowRows < 5;
+    floor += 3.1
+  ) {
     facadePanel(
       view,
       group,

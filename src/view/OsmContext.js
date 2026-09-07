@@ -178,11 +178,16 @@ export function addRealHcmContext(view) {
   }
 
   let made = 0;
-  for (let index = 0; index < buildings.length && made < buildingLimit; index++) {
+  for (
+    let index = 0;
+    index < buildings.length && made < buildingLimit;
+    index++
+  ) {
     const [sx, sz, sw, sd, sh, angle, kind] = buildings[index];
     const position = sourceToGame(sx, sz);
     const distance = corridorDistance(position.x, position.z);
-    if (distance < BACKGROUND_BUILDING_MIN || distance > CONTEXT_RADIUS) continue;
+    if (distance < BACKGROUND_BUILDING_MIN || distance > CONTEXT_RADIUS)
+      continue;
     const w = Math.max(1.2, sw * REAL_HCM_CORRIDOR.scale);
     const d = Math.max(1.2, sd * REAL_HCM_CORRIDOR.scale);
     if (w > 30 || d > 30) continue;
