@@ -6,10 +6,10 @@ import { CHAOS } from "../game/ChaosDirector.js";
 const APPROACH_DISTANCE = 13;
 const FIRST_MOVEMENT_DISTANCE = 3;
 const PASSENGER_PREFERENCES = {
-  office: ["THƯỞNG · TỚI SỚM", "BONUS · BEAT THE CLOCK"],
-  grandma: ["THƯỞNG · CHẠY ÊM", "BONUS · KEEP IT SMOOTH"],
-  student: ["THƯỞNG · ĐI HẺM", "BONUS · TAKE AN ALLEY"],
-  chaos: ["THƯỞNG · LÁCH ĐẸP", "BONUS · CLEAN CLOSE PASSES"],
+  office: ["THƯỞNG · ĐẾN SỚM", "BONUS · ARRIVE EARLY"],
+  grandma: ["THƯỞNG · CHẠY ÊM", "BONUS · RIDE SMOOTHLY"],
+  student: ["THƯỞNG · ĐI XUYÊN HẺM", "BONUS · TAKE AN ALLEY"],
+  chaos: ["THƯỞNG · LÁCH XE AN TOÀN", "BONUS · SAFE CLOSE PASSES"],
 };
 const EN_STOPS = {
   "CÀ PHÊ MÂY NHỎ": "MÂY NHỎ CAFÉ",
@@ -58,11 +58,11 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
   } else if (run.stats.distance < FIRST_MOVEMENT_DISTANCE) {
     stage = "depart";
     hint = touch
-      ? text("GIỮ GA ↑ · CHẠM ←/→ ĐỂ RẼ", "HOLD GO ↑ · TAP ←/→ TO STEER")
+      ? text("GIỮ NÚT GA ↑ · CHẠM ←/→ ĐỂ RẼ", "HOLD GO ↑ · TOUCH ←/→ TO STEER")
       : text("GIỮ W / ↑ ĐỂ LÊN GA · A/D ĐỂ RẼ · S ĐỂ PHANH", "HOLD W / ↑ TO GO · A/D TO STEER · S TO BRAKE");
   } else if (overdue) {
     stage = "overdue";
-    hint = text("TRỄ RỒI · CỨ ĐƯA KHÁCH TỚI NƠI", "YOU'RE LATE · JUST GET THEM THERE");
+    hint = text("TRỄ RỒI · CỨ ĐƯA KHÁCH TỚI NƠI", "YOU'RE LATE · YOU CAN STILL DROP OFF");
   }
 
   const preference = PASSENGER_PREFERENCES[mission.passenger.id];
@@ -76,7 +76,7 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
     deadline: pickup
       ? ""
       : overdue
-        ? text("ĐÃ TRỄ", "LATE")
+        ? text("QUÁ GIỜ", "LATE")
         : Math.ceil(mission.deadline) + " s",
     showProgress: inside && run.player.recovery === 0,
     progress:
@@ -84,8 +84,8 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
         ? clamp(mission.dwell / CONFIG.boardingSeconds, 0, 1)
         : 0,
     progressLabel: pickup
-      ? text("Đang đón khách", "Picking up passenger")
-      : text("Đang trả khách", "Dropping off passenger"),
+      ? text("Tiến độ đón khách", "Pickup progress")
+      : text("Tiến độ trả khách", "Drop-off progress"),
   };
 }
 
