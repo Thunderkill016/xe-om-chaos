@@ -31,7 +31,9 @@ jobs:
           path = Path("src/view/PlayCanvasScene.js")
           text = path.read_text()
           old = "    const markerMaterial = this.marker.render?.material;"
-          new = "    const markerMaterial = /** @type {pc.StandardMaterial | null} */ (\\n      this.marker.render?.material ?? null\\n    );"
+          new = '''    const markerMaterial = /** @type {pc.StandardMaterial | null} */ (
+            this.marker.render?.material ?? null
+          );'''
           if old in text:
               path.write_text(text.replace(old, new))
           PY
