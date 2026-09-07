@@ -6,10 +6,26 @@ import { CHAOS } from "../game/ChaosDirector.js";
 const APPROACH_DISTANCE = 13;
 const FIRST_MOVEMENT_DISTANCE = 3;
 const PASSENGER_PREFERENCES = {
-  office: ["THƯỞNG · ĐẾN SỚM", "BONUS · ARRIVE EARLY"],
-  grandma: ["THƯỞNG · CHẠY ÊM", "BONUS · RIDE SMOOTHLY"],
-  student: ["THƯỞNG · ĐI XUYÊN HẺM", "BONUS · TAKE AN ALLEY"],
-  chaos: ["THƯỞNG · LÁCH XE AN TOÀN", "BONUS · SAFE CLOSE PASSES"],
+  office: ["THƯỞNG · TỚI SỚM", "BONUS · BEAT THE CLOCK"],
+  grandma: ["THƯỞNG · CHẠY ÊM", "BONUS · KEEP IT SMOOTH"],
+  student: ["THƯỞNG · ĐI HẺM", "BONUS · TAKE AN ALLEY"],
+  chaos: ["THƯỞNG · LÁCH ĐẸP", "BONUS · CLEAN CLOSE PASSES"],
+};
+const EN_STOPS = {
+  "CÀ PHÊ MÂY NHỎ": "MÂY NHỎ CAFÉ",
+  "BẾN GIÓ": "BẾN GIÓ",
+  "CHỢ AN HÒA": "AN HÒA MARKET",
+  "CƠM TẤM CÔ BẢY": "CÔ BẢY CƠM TẤM",
+  "HẺM 26": "HẺM 26",
+  "CHUNG CƯ NẮNG": "NẮNG APARTMENTS",
+};
+const EN_DISTRICTS = {
+  "BẾN GIÓ": "BẾN GIÓ",
+  "CHỢ AN HÒA": "AN HÒA MARKET",
+  "PHỐ ĂN ĐÊM": "NIGHT FOOD STREET",
+  "HẺM 26": "HẺM 26",
+  "CHUNG CƯ NẮNG": "NẮNG APARTMENTS",
+  "ĐẠI LỘ SÀI GÒN": "SAIGON BOULEVARD",
 };
 
 export function getMissionGuidance(run, language = "vi", touch = false) {
@@ -22,52 +38,31 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
   const overdue = !pickup && mission.deadline < 0;
   let stage = "route";
   let hint = text(
-    "Đường lớn hay hẻm? Bạn chọn.",
-    "Boulevard or hẻm? Your call.",
+    "ĐƯỜNG LỚN HAY CHUI HẺM? TÙY TAY LÁI.",
+    "MAIN ROAD OR ALLEY? YOUR CALL.",
   );
 
   if (run.player.recovery > 0) {
     stage = "recovery";
-    hint = text(
-      "BÌNH TĨNH · XE ĐANG HỒI PHỤC",
-      "EASY · YOUR BIKE IS RECOVERING",
-    );
+    hint = text("BÌNH TĨNH · LẤY LẠI TAY LÁI", "EASY · GET THE BIKE BACK UNDER YOU");
   } else if (inside && slowEnough) {
     stage = "boarding";
     hint = pickup
-      ? text("GIỮ PHANH · KHÁCH ĐANG LÊN XE", "HOLD BRAKE · PASSENGER BOARDING")
-      : text(
-          "GIỮ PHANH · KHÁCH ĐANG XUỐNG XE",
-          "HOLD BRAKE · PASSENGER GETTING OFF",
-        );
+      ? text("GIỮ PHANH · ĐỢI KHÁCH LÊN XE", "HOLD THE BRAKE · PASSENGER'S GETTING ON")
+      : text("GIỮ PHANH · ĐỢI KHÁCH XUỐNG XE", "HOLD THE BRAKE · PASSENGER'S GETTING OFF");
   } else if (targetDistance < APPROACH_DISTANCE) {
     stage = "brake";
     hint = pickup
-      ? text(
-          "↓ PHANH TRONG VÒNG VÀNG ĐỂ ĐÓN KHÁCH",
-          "↓ BRAKE IN THE YELLOW RING TO PICK UP",
-        )
-      : text(
-          "↓ PHANH TRONG VÒNG XANH ĐỂ TRẢ KHÁCH",
-          "↓ BRAKE IN THE GREEN RING TO DROP OFF",
-        );
+      ? text("↓ CHẬM LẠI · DỪNG TRONG VÒNG VÀNG", "↓ SLOW DOWN · STOP IN THE YELLOW RING")
+      : text("↓ CHẬM LẠI · DỪNG TRONG VÒNG XANH", "↓ SLOW DOWN · STOP IN THE GREEN RING");
   } else if (run.stats.distance < FIRST_MOVEMENT_DISTANCE) {
     stage = "depart";
     hint = touch
-      ? text(
-          "GIỮ NÚT GA ↑ · CHẠM ←/→ ĐỂ RẼ",
-          "HOLD ↑ TO GO · TOUCH ←/→ TO STEER",
-        )
-      : text(
-          "GIỮ GA W / ↑ · A/D để rẽ · S để phanh",
-          "HOLD W / ↑ · A/D steer · S brake",
-        );
+      ? text("GIỮ GA ↑ · CHẠM ←/→ ĐỂ RẼ", "HOLD GO ↑ · TAP ←/→ TO STEER")
+      : text("GIỮ W / ↑ ĐỂ LÊN GA · A/D ĐỂ RẼ · S ĐỂ PHANH", "HOLD W / ↑ TO GO · A/D TO STEER · S TO BRAKE");
   } else if (overdue) {
     stage = "overdue";
-    hint = text(
-      "HẾT THƯỞNG GIỜ · VẪN TRẢ KHÁCH ĐƯỢC",
-      "TIME BONUS ENDED · YOU CAN STILL DROP OFF",
-    );
+    hint = text("TRỄ RỒI · CỨ ĐƯA KHÁCH TỚI NƠI", "YOU'RE LATE · JUST GET THEM THERE");
   }
 
   const preference = PASSENGER_PREFERENCES[mission.passenger.id];
@@ -75,13 +70,13 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
     stage,
     hint,
     phase: pickup
-      ? text("ĐÓN KHÁCH · VÒNG VÀNG", "PICK UP · YELLOW RING")
-      : text("TRẢ KHÁCH · VÒNG XANH", "DROP OFF · GREEN RING"),
+      ? text("ĐÓN KHÁCH · VÒNG VÀNG", "PICKUP · YELLOW RING")
+      : text("TRẢ KHÁCH · VÒNG XANH", "DROPOFF · GREEN RING"),
     preference: text(preference[0], preference[1]),
     deadline: pickup
       ? ""
       : overdue
-        ? text("QUÁ GIỜ", "LATE")
+        ? text("ĐÃ TRỄ", "LATE")
         : Math.ceil(mission.deadline) + " s",
     showProgress: inside && run.player.recovery === 0,
     progress:
@@ -89,8 +84,8 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
         ? clamp(mission.dwell / CONFIG.boardingSeconds, 0, 1)
         : 0,
     progressLabel: pickup
-      ? text("Tiến độ đón khách", "Pickup progress")
-      : text("Tiến độ trả khách", "Drop-off progress"),
+      ? text("Đang đón khách", "Picking up passenger")
+      : text("Đang trả khách", "Dropping off passenger"),
   };
 }
 
@@ -99,7 +94,9 @@ export const el = (id) => document.getElementById(id);
 export class UI {
   constructor(seed) {
     this.seed = seed;
-    this.language = "vi";
+    this.language = document.documentElement.lang.toLowerCase().startsWith("en")
+      ? "en"
+      : "vi";
     this.reactionUntil = 0;
     this.lastHud = 0;
     this.storageAvailable = true;
@@ -109,27 +106,20 @@ export class UI {
     const saved = this.read("xoc:settings", {});
     this.prefs =
       saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
-    this.language = this.prefs.language === "en" ? "en" : "vi";
-    this.localize();
-    el("language").value = this.language;
-    el("daily-label").textContent = "DAILY RUN / " + seed + " UTC";
+    el("daily-label").textContent = this.t(
+      "CUỐC HÔM NAY · " + seed,
+      "DAILY RUN · " + seed,
+    );
     const best = this.read(this.bestKey(), 0);
     el("welcome-best").textContent = best
-      ? this.t("KỶ LỤC HÔM NAY · ", "TODAY’S BEST · ") + best.toLocaleString()
-      : this.t("KHÔNG TÀI KHOẢN. CỨ THẾ MÀ ĐI.", "NO ACCOUNT. JUST RIDE.");
+      ? this.t("KỶ LỤC HÔM NAY · ", "TODAY'S BEST · ") + best.toLocaleString()
+      : this.t(
+          "KHÔNG CẦN TÀI KHOẢN. LÊN XE LÀ CHẠY.",
+          "NO ACCOUNT. JUST RIDE.",
+        );
   }
   t(vi, en) {
     return this.language === "vi" ? vi : en;
-  }
-  localize() {
-    document.documentElement.lang = this.language;
-    document.querySelectorAll("[data-vi]").forEach((node) => {
-      if (node instanceof HTMLElement)
-        node.textContent = (node.dataset[this.language] || "").replaceAll(
-          "\\n",
-          "\n",
-        );
-    });
   }
   bestKey() {
     return "xoc:best:" + CONFIG.version + ":" + this.seed;
@@ -171,17 +161,25 @@ export class UI {
         : event.value
           ? " +" + event.value
           : "";
+    const passenger = PASSENGERS.find((p) => p.line === event.text);
+    const chaos = CHAOS.find((e) => e.vi === event.text);
     let text = event.text;
-    if (this.language === "en") {
-      const passenger = PASSENGERS.find((p) => p.line === text);
-      const chaos = CHAOS.find((e) => e.vi === text);
-      if (passenger) text += "\n" + passenger.subtitle;
-      else if (chaos) text = chaos.en;
-      else if (event.type === "delivery") text = "MADE IT!";
-      else if (event.type === "crash") text = "ỦA?! / WHOOPS!";
-      else if (event.type === "discovery") text = "FOUND HẺM 26!";
-      else if (event.type === "thread") text = "THREADED! +BOOST";
-    }
+    if (passenger) text = this.t(passenger.line, passenger.subtitle);
+    else if (chaos) text = this.t(chaos.vi, chaos.en);
+    else if (event.type === "delivery")
+      text = this.t(
+        event.text.includes("MUỘN") ? "TRỄ NHƯNG TỚI!" : "TỚI RỒI!",
+        event.text.includes("MUỘN") ? "LATE, BUT MADE IT!" : "MADE IT!",
+      );
+    else if (event.type === "crash") text = this.t("ỦA?!", "WHOOPS!");
+    else if (event.type === "discovery")
+      text = this.t("HẺM 26 · THẤY LỐI TẮT!", "HẺM 26 · SHORTCUT FOUND!");
+    else if (event.type === "thread")
+      text = this.t("LÁCH KÉP! +BỨT TỐC", "THREAD THE GAP! +BOOST");
+    else if (event.type === "pothole") text = this.t("ỐI!", "BUMP!");
+    else if (event.text.includes("LÁCH ĐẸP")) text = this.t("LÁCH NGỌT!", "CLEAN PASS!");
+    else if (event.text.includes("HẺM MASTER")) text = this.t("RÀNH HẺM!", "ALLEY ACE!");
+    else if (event.text.includes("MƯỢT")) text = this.t("MƯỢT!", "SMOOTH!");
     el("reaction").textContent = text + suffix;
     el("reaction").dataset.event = event.type;
     this.reactionUntil = time + 2.3;
@@ -209,7 +207,8 @@ export class UI {
     );
     el("mission-card").dataset.phase = m.phase;
     el("mission-phase").textContent = guidance.phase;
-    el("destination").textContent = m.target.name;
+    el("destination").textContent =
+      this.language === "en" ? EN_STOPS[m.target.name] || m.target.name : m.target.name;
     el("mission-detail").textContent =
       this.t(m.passenger.vi, m.passenger.en) +
       " · " +
@@ -223,7 +222,9 @@ export class UI {
     const angle = Math.atan2(m.target.x - p.x, m.target.z - p.z);
     el("direction").style.transform =
       "rotate(" + -angleDelta(angle, p.angle) + "rad)";
-    el("district").textContent = district(p.x, p.z);
+    const districtName = district(p.x, p.z);
+    el("district").textContent =
+      this.language === "en" ? EN_DISTRICTS[districtName] || districtName : districtName;
     el("chaos").textContent =
       this.language === "en"
         ? CHAOS.find((e) => e.vi === run.eventName)?.en || ""
@@ -327,12 +328,22 @@ export class UI {
       result.score > best
         ? this.write(this.bestKey(), result.score)
         : this.storageAvailable;
-    el("result-title").textContent = result.title;
+    const title =
+      result.alleys >= 3
+        ? this.t("TRÙM HẺM", "ALLEY ACE")
+        : result.nearMisses >= 12
+          ? this.t("LÁCH NHƯ NƯỚC", "TRAFFIC DANCER")
+          : result.horns >= 20
+            ? this.t("CÒI TRƯỞNG", "HORN HAPPY")
+            : result.crashes >= 5
+              ? this.t("NGÃ VẪN CHẠY", "STILL RIDING")
+              : this.t("TAY LÁI SÀI GÒN", "SAIGON RIDER");
+    el("result-title").textContent = title;
     el("result-score").textContent = result.score.toLocaleString();
     el("best-message").textContent = !saved
       ? this.t(
-          "Không lưu được kỷ lục · vẫn có thể lưu ảnh",
-          "Storage unavailable · you can still save the card",
+          "Máy này chưa lưu được kỷ lục · vẫn lưu ảnh được",
+          "Couldn't save a local best · you can still save the card",
         )
       : result.score > best
         ? this.t("KỶ LỤC MỚI TRÊN MÁY NÀY ✦", "NEW BEST ON THIS DEVICE ✦")
@@ -341,9 +352,9 @@ export class UI {
     el("result-grid").replaceChildren();
     for (const [label, value] of [
       [this.t("TIỀN CƯỚC", "FARES"), result.money.toLocaleString() + " ₫"],
-      ["FLOW", "×" + result.bestCombo],
+      [this.t("NHỊP", "FLOW"), "×" + result.bestCombo],
       [this.t("LÁCH XE", "NEAR MISSES"), result.nearMisses],
-      [this.t("CHUYẾN XE", "DELIVERIES"), result.deliveries],
+      [this.t("CUỐC ĐÃ XONG", "DELIVERIES"), result.deliveries],
       [this.t("QUÃNG ĐƯỜNG", "DISTANCE"), Math.round(result.distance) + " m"],
       [this.t("VA CHẠM", "CRASHES"), result.crashes],
     ]) {
@@ -360,7 +371,7 @@ export class UI {
       " · " +
       run.seed +
       " UTC · " +
-      this.t("Điểm cục bộ", "Local score");
+      this.t("ĐIỂM TRÊN MÁY NÀY", "LOCAL SCORE");
     el("results").showModal();
   }
 }
