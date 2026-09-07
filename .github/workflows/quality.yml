@@ -21,8 +21,6 @@ jobs:
       - name: Opening route diagnostic
         run: |
           node --input-type=module -e 'import { driveOpeningRoute } from "./scripts/evaluate-routes.mjs"; const { run, measurement } = driveOpeningRoute("2026-09-06", "hem26"); console.log(JSON.stringify({ measurement, crashes: run.moments.filter((m) => m.type === "crash") }, null, 2));'
-      - name: Canonical format probe
-        run: npx prettier scripts/core-driving-smoke.mjs
       - run: npm run quality
 
   browser-smoke:
