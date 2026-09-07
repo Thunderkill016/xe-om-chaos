@@ -32,13 +32,13 @@ export const SAIGON_VERTICAL_SLICE = Object.freeze({
   name: "BẾN THÀNH → LÊ LỢI → NGUYỄN HUỆ",
   start: Object.freeze({
     name: "CHỢ BẾN THÀNH · QUÁCH THỊ TRANG",
-    lat: 10.77257,
-    lon: 106.69802,
+    lat: 10.77211,
+    lon: 106.69827,
   }),
   end: Object.freeze({
     name: "LÊ LỢI · NGUYỄN HUỆ",
-    lat: 10.7743,
-    lon: 106.7031,
+    lat: 10.77547,
+    lon: 106.702148,
   }),
 });
 
