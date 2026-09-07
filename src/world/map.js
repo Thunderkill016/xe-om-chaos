@@ -185,10 +185,11 @@ export function district(x, z) {
   return "ĐẠI LỘ SÀI GÒN";
 }
 
-// Twelve stable streams: two directions on each of three horizontal and three
-// vertical avenues. All streams use the same pace so one scripted NPC cannot
-// catch and overlap the next one. The phase offsets keep perpendicular streams
-// separated at the nine avenue intersections across the repeating cycle.
+// Traffic Pass 2 keeps the proven junction timetable but removes the visual
+// conveyor-belt feel between intersections. Every NPC receives a seeded driver
+// profile: slightly different longitudinal rhythm and lane-centre preference.
+// The variation fades to zero around junction cores, so crossing times stay as
+// readable and deterministic as the previous stable-stream model.
 const TRAFFIC_STREAMS = AVENUES.length * 4;
 const TRAFFIC_MIN = -EXTENT + 2;
 const TRAFFIC_MAX = EXTENT - 2;
@@ -225,6 +226,37 @@ function wrap(value, period) {
   return ((value % period) + period) % period;
 }
 
+function smoothstep01(value) {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
+}
+
+function junctionFreedom(coordinate) {
+  const distanceToJunction = Math.min(
+    ...AVENUES.map((road) => Math.abs(coordinate - road)),
+  );
+  // Freeze authored variation from 5.5 m around a junction centre, then blend
+  // it back over the next 10 m. This keeps the conflict core predictable while
+  // letting each driver develop a distinct rhythm over the long block.
+  return smoothstep01((distanceToJunction - 5.5) / 10);
+}
+
+function driverProfile(rng, kind) {
+  const bike = kind === "bike";
+  const delivery = kind === "delivery";
+  const paceScale = bike ? 1 : delivery ? 0.82 : 0.62;
+  const wanderScale = bike ? 1 : delivery ? 0.68 : 0.4;
+  return {
+    paceAmplitude: (0.55 + rng() * 0.65) * paceScale,
+    paceFrequency: 0.36 + rng() * 0.24,
+    pacePhase: rng() * Math.PI * 2,
+    laneBias: (rng() * 2 - 1) * 0.2 * wanderScale,
+    wanderAmplitude: (0.12 + rng() * 0.2) * wanderScale,
+    wanderFrequency: 0.2 + rng() * 0.22,
+    wanderPhase: rng() * Math.PI * 2,
+  };
+}
+
 export function makeTraffic(rng, regularCount, rushCount = 0) {
   const total = regularCount + rushCount;
   // A daily global rotation changes where the whole pattern starts without
@@ -252,6 +284,7 @@ export function makeTraffic(rng, regularCount, rushCount = 0) {
       speed: TRAFFIC_SPEED,
       kind,
       ...vehicleShape(kind),
+      ...driverProfile(rng, kind),
       x: 0,
       z: 0,
       angle: 0,
@@ -303,13 +336,37 @@ export function trafficPose(vehicle, time) {
   else {
     const travel =
       TRAFFIC_MIN + wrap(vehicle.phase + time * vehicle.speed, TRAFFIC_PERIOD);
+    let coordinate = vehicle.direction > 0 ? travel : -travel;
+    let lateral = 0;
+
+    // A stopped diagnostic fixture must stay truly stopped. Normal traffic gets
+    // authored driver texture only between junctions. Longitudinal variation is
+    // measured in the forward direction, so a positive pulse means "a little
+    // ahead of timetable" regardless of the stream's world-axis direction.
+    if (vehicle.speed > 0 && Number.isFinite(vehicle.paceAmplitude)) {
+      const freedom = junctionFreedom(coordinate);
+      const speedScale = Math.min(1, Math.max(0, vehicle.speed / TRAFFIC_SPEED));
+      const pace =
+        Math.sin(time * vehicle.paceFrequency + vehicle.pacePhase) *
+        vehicle.paceAmplitude *
+        freedom *
+        speedScale;
+      coordinate += pace * vehicle.direction;
+      lateral =
+        (vehicle.laneBias +
+          Math.sin(time * vehicle.wanderFrequency + vehicle.wanderPhase) *
+            vehicle.wanderAmplitude) *
+        freedom *
+        speedScale;
+    }
+
     if (vehicle.axis === "x") {
-      vehicle.x = vehicle.direction > 0 ? travel : -travel;
-      vehicle.z = vehicle.lane;
+      vehicle.x = coordinate;
+      vehicle.z = vehicle.lane + lateral;
       vehicle.angle = vehicle.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
     } else {
-      vehicle.x = vehicle.lane;
-      vehicle.z = vehicle.direction > 0 ? travel : -travel;
+      vehicle.x = vehicle.lane + lateral;
+      vehicle.z = coordinate;
       vehicle.angle = vehicle.direction > 0 ? 0 : Math.PI;
     }
   }
