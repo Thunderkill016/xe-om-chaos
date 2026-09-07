@@ -12,7 +12,13 @@ const CORE_RESERVE = 76;
 const ROAD_RESERVE = 68;
 const MAX_BUILDINGS_LOW = 260;
 const MAX_BUILDINGS_HIGH = 720;
-const MAJOR = new Set(["motorway", "trunk", "primary", "secondary", "tertiary"]);
+const MAJOR = new Set([
+  "motorway",
+  "trunk",
+  "primary",
+  "secondary",
+  "tertiary",
+]);
 const ROAD_COLOUR = {
   motorway: 0x30363a,
   trunk: 0x343a3d,
@@ -82,9 +88,11 @@ export function addRealHcmContext(view) {
   const solid = new THREE.Group();
   solid.name = "HCMC_REAL_OSM_SOURCE";
   const quality = view.quality === "low" ? "low" : "high";
-  const buildingLimit = quality === "low" ? MAX_BUILDINGS_LOW : MAX_BUILDINGS_HIGH;
+  const buildingLimit =
+    quality === "low" ? MAX_BUILDINGS_LOW : MAX_BUILDINGS_HIGH;
 
-  for (const feature of data.green) areaBox(view, solid, feature, 0x4b7157, 0.02);
+  for (const feature of data.green)
+    areaBox(view, solid, feature, 0x4b7157, 0.02);
   for (const [kind, points] of data.water) {
     if (kind === "area") areaBox(view, solid, points, 0x397c86, -0.02);
     else
@@ -115,7 +123,9 @@ export function addRealHcmContext(view) {
     const w = Math.max(0.8, scaled(mw));
     const d = Math.max(0.8, scaled(md));
     if (w > 24 || d > 24) continue;
-    const high = mh >= 38 || ["office", "hotel", "commercial", "apartments"].includes(kind);
+    const high =
+      mh >= 38 ||
+      ["office", "hotel", "commercial", "apartments"].includes(kind);
     const palette = high ? FACADE_HIGH : FACADE_LOW;
     const colour = palette[(i * 7 + Math.round(mh)) % palette.length];
     const mesh = view.mesh(solid, colour, x, h * 0.5, z, w, h, d);

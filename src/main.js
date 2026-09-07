@@ -2,6 +2,7 @@ import { CONFIG, dailySeed, validSeed } from "./game/config.js";
 import { Run } from "./game/Run.js";
 import { Scene } from "./view/Scene.js";
 import { addDowntownCinematic } from "./view/Downtown.js";
+import { addRealHcmContext } from "./view/OsmContext.js";
 import { Input } from "./platform/Input.js";
 import { Audio } from "./platform/Audio.js";
 import { UI, el } from "./platform/UI.js";
@@ -31,6 +32,7 @@ let menuTime = 0;
 try {
   view = new Scene(el("game"));
   addDowntownCinematic(view);
+  addRealHcmContext(view);
 } catch (error) {
   el("fatal").hidden = false;
   el("fatal").textContent = ui.t(

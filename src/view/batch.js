@@ -36,7 +36,12 @@ export function colouredGeometry(root) {
   return merged;
 }
 export const vertexMaterial = () =>
-  new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+  new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.76,
+    metalness: 0.02,
+    flatShading: false,
+  });
 
 // Horizontal surfaces sample an unpainted patch of the shared plaster map.
 // Otherwise a 178m road stretches facade streaks into what looks like wood grain.
