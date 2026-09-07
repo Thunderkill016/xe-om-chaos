@@ -3,11 +3,12 @@ import { Run } from "./game/Run.js";
 import { Scene } from "./view/Scene.js";
 import { addDowntownCinematic } from "./view/Downtown.js";
 import { addRealHcmContext } from "./view/OsmContext.js";
+import { addPlayableHcmCorridor } from "./view/HcmCorridorView.js";
 import { Input } from "./platform/Input.js";
 import { Audio } from "./platform/Audio.js";
 import { UI, el } from "./platform/UI.js";
 import { bindShare } from "./platform/Share.js";
-import { trafficPose } from "./world/map.js";
+import { worldTrafficPose } from "./world/HcmCorridor.js";
 
 const params = new URLSearchParams(location.search);
 const requested = params.get("seed");
@@ -33,6 +34,7 @@ try {
   view = new Scene(el("game"));
   addDowntownCinematic(view);
   addRealHcmContext(view);
+  addPlayableHcmCorridor(view);
 } catch (error) {
   el("fatal").hidden = false;
   el("fatal").textContent = ui.t(
@@ -201,7 +203,7 @@ function frame(now) {
     menuTime += elapsed;
     for (const vehicle of run.traffic) {
       vehicle.active = vehicle.id < CONFIG.trafficCount;
-      trafficPose(vehicle, menuTime);
+      worldTrafficPose(vehicle, menuTime);
     }
   }
   if (view) {

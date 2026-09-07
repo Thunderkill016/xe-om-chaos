@@ -44,7 +44,7 @@ function laneMarks(view, parent, a, b) {
       a.z + dz * t,
       0.13,
       0.025,
-      Math.min(2.6, length / count * 0.48),
+      Math.min(2.6, (length / count) * 0.48),
     );
     mesh.rotation.y = angle;
   }
@@ -62,9 +62,27 @@ function buildingAabb(building) {
 }
 
 function addStopBeacon(view, parent, stop, index) {
-  const post = view.mesh(parent, 0x315c59, stop.x, 1.6, stop.z, 0.14, 3.2, 0.14);
+  const post = view.mesh(
+    parent,
+    0x315c59,
+    stop.x,
+    1.6,
+    stop.z,
+    0.14,
+    3.2,
+    0.14,
+  );
   post.rotation.y = index * Math.PI;
-  const cap = view.mesh(parent, index === 0 ? 0xffc668 : 0x85f3c5, stop.x, 3.15, stop.z, 0.62, 0.18, 0.62);
+  const cap = view.mesh(
+    parent,
+    index === 0 ? 0xffc668 : 0x85f3c5,
+    stop.x,
+    3.15,
+    stop.z,
+    0.62,
+    0.18,
+    0.62,
+  );
   cap.rotation.y = Math.PI / 4;
 }
 
@@ -86,7 +104,8 @@ export function addPlayableHcmCorridor(view) {
       building.h > 10 ||
       ["office", "hotel", "commercial", "apartments"].includes(building.kind);
     const palette = high ? FACADE_HIGH : FACADE_LOW;
-    const colour = palette[(index * 5 + Math.round(building.h)) % palette.length];
+    const colour =
+      palette[(index * 5 + Math.round(building.h)) % palette.length];
     const mesh = view.mesh(
       solid,
       colour,
@@ -114,7 +133,9 @@ export function addPlayableHcmCorridor(view) {
     view.buildingFootprints.push(buildingAabb(building));
   }
 
-  REAL_HCM_CORRIDOR_STOPS.forEach((stop, index) => addStopBeacon(view, solid, stop, index));
+  REAL_HCM_CORRIDOR_STOPS.forEach((stop, index) =>
+    addStopBeacon(view, solid, stop, index),
+  );
 
   const batch = cityChunks(solid);
   batch.name = "HCMC_PLAYABLE_OSM_CORRIDOR";

@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { Run } from "../src/game/Run.js";
 import { openingRoutes } from "./evaluate-routes.mjs";
+import { REAL_HCM_CORRIDOR_STOPS } from "../src/world/HcmCorridor.js";
 
 const output = process.env.XEOM_OUTPUT || "output/core-driving";
 const base = (process.env.XEOM_URL || "http://127.0.0.1:4173").replace(
@@ -179,6 +180,40 @@ try {
   );
 
   await page.screenshot({ path: `${output}/after-route.png` });
+
+  const corridorEvidence = await page.evaluate((stops) => {
+    const start = stops[0];
+    const end = stops[1];
+    const p = window.xeom.run.player;
+    p.x = start.x;
+    p.z = start.z;
+    p.speed = 0;
+    p.vx = 0;
+    p.vz = 0;
+    p.angle = Math.atan2(end.x - start.x, end.z - start.z);
+    window.xeom.run.missions.phase = "dropoff";
+    window.xeom.run.missions.destination = end;
+    return {
+      start,
+      end,
+      corridorStats: window.xeom.view.realHcmCorridorStats,
+      corridorTraffic: window.xeom.run.traffic.filter(
+        (vehicle) => vehicle.route === "hcm-osm-corridor-1",
+      ).length,
+    };
+  }, REAL_HCM_CORRIDOR_STOPS);
+  report.corridor = corridorEvidence;
+  check(
+    "playable HCMC OSM corridor is rendered with real source geometry",
+    corridorEvidence.corridorStats?.source === "OpenStreetMap" &&
+      corridorEvidence.corridorStats.gameLength > 20,
+  );
+  check(
+    "live traffic is assigned to the HCMC OSM corridor",
+    corridorEvidence.corridorTraffic >= 2,
+  );
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${output}/hcm-corridor.png` });
   await context.close();
 
   const internationalContext = await browser.newContext({

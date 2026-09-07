@@ -1,5 +1,5 @@
 import { CONFIG, distance } from "./config.js";
-import { STOPS } from "../world/map.js";
+import { WORLD_STOPS as STOPS } from "../world/HcmCorridor.js";
 
 export const PASSENGERS = [
   {
@@ -48,9 +48,12 @@ export const PASSENGERS = [
 export class Missions {
   constructor(rng) {
     this.sequence = Array.from({ length: 24 }, (_, i) => ({
-      passenger: i === 0 ? 0 : Math.floor(rng() * PASSENGERS.length),
-      // First trip exposes the authored shortcut; later trips use the full district.
-      destination: i === 0 ? 4 : (i + 1) % STOPS.length,
+      passenger: i <= 1 ? 0 : Math.floor(rng() * PASSENGERS.length),
+      // Trip one proves the authored hẻm. Trip two deliberately moves into the
+      // playable OpenStreetMap corridor before later trips resume the full pool.
+      pickup: i === 1 ? STOPS.length - 2 : null,
+      destination:
+        i === 0 ? 4 : i === 1 ? STOPS.length - 1 : (i + 1) % STOPS.length,
     }));
     this.index = 0;
     this.phase = "pickup";
@@ -125,8 +128,11 @@ export class Missions {
       this.index = (this.index + 1) % this.sequence.length;
       const next = this.sequence[this.index];
       this.passenger = PASSENGERS[next.passenger];
-      this.pickup = STOPS[(next.destination + 4) % STOPS.length];
-      if (this.pickup === previous)
+      this.pickup =
+        next.pickup == null
+          ? STOPS[(next.destination + 4) % STOPS.length]
+          : STOPS[next.pickup];
+      if (this.pickup === previous && next.pickup == null)
         this.pickup = STOPS[(next.destination + 3) % STOPS.length];
       this.destination = STOPS[next.destination];
       this.phase = "pickup";

@@ -43,7 +43,8 @@ function segmentLength(a, b) {
 
 function polylineLength(points) {
   let length = 0;
-  for (let i = 1; i < points.length; i++) length += segmentLength(points[i - 1], points[i]);
+  for (let i = 1; i < points.length; i++)
+    length += segmentLength(points[i - 1], points[i]);
   return length;
 }
 
@@ -52,7 +53,11 @@ function distanceToSegment(point, a, b) {
   const dz = b[1] - a[1];
   const denominator = dx * dx + dz * dz;
   if (denominator <= 1e-9) return pointDistance(point, a);
-  const t = clamp(((point[0] - a[0]) * dx + (point[1] - a[1]) * dz) / denominator, 0, 1);
+  const t = clamp(
+    ((point[0] - a[0]) * dx + (point[1] - a[1]) * dz) / denominator,
+    0,
+    1,
+  );
   return Math.hypot(point[0] - (a[0] + dx * t), point[1] - (a[1] + dz * t));
 }
 
@@ -94,12 +99,16 @@ function stitchRoad(seedIndex, reverse, roads) {
       const road = roads[index];
       for (const candidateReverse of [false, true]) {
         const candidate = orientedRoad(road, candidateReverse);
-        if (pointDistance(tail, candidate.points[0]) > ENDPOINT_EPSILON) continue;
+        if (pointDistance(tail, candidate.points[0]) > ENDPOINT_EPSILON)
+          continue;
         const nextTangent = tangent(candidate.points);
-        const dot = currentTangent[0] * nextTangent[0] + currentTangent[1] * nextTangent[1];
+        const dot =
+          currentTangent[0] * nextTangent[0] +
+          currentTangent[1] * nextTangent[1];
         if (dot < -0.25) continue;
         const length = polylineLength(candidate.points);
-        const score = dot * 28 + length * 0.045 + (TYPE_BONUS[candidate.type] ?? 0);
+        const score =
+          dot * 28 + length * 0.045 + (TYPE_BONUS[candidate.type] ?? 0);
         if (!best || score > best.score)
           best = { index, candidate, length, score };
       }
@@ -109,7 +118,9 @@ function stitchRoad(seedIndex, reverse, roads) {
     used.add(best.index);
     points.push(...best.candidate.points.slice(1));
     sourceLength += best.length;
-    if ((TYPE_BONUS[best.candidate.type] ?? 0) > (TYPE_BONUS[dominantType] ?? 0))
+    if (
+      (TYPE_BONUS[best.candidate.type] ?? 0) > (TYPE_BONUS[dominantType] ?? 0)
+    )
       dominantType = best.candidate.type;
     sourceWidth = Math.max(sourceWidth, best.candidate.width);
   }
@@ -158,13 +169,23 @@ function transformRoute(sourcePoints) {
 }
 
 function candidateScore(chain, transformed) {
-  const gameLength = polylineLength(transformed.points.map((point) => [point.x, point.z]));
+  const gameLength = polylineLength(
+    transformed.points.map((point) => [point.x, point.z]),
+  );
   const end = transformed.points.at(-1);
   const forward = end.z - ANCHOR.z;
-  const maxLateral = Math.max(...transformed.points.map((point) => Math.abs(point.x - ANCHOR.x)));
-  const minForward = Math.min(...transformed.points.map((point) => point.z - ANCHOR.z));
-  if (gameLength < 22 || forward < 12 || maxLateral > 58 || minForward < -18) return -Infinity;
-  const sourceCenterDistance = Math.hypot(chain.points[0][0], chain.points[0][1]);
+  const maxLateral = Math.max(
+    ...transformed.points.map((point) => Math.abs(point.x - ANCHOR.x)),
+  );
+  const minForward = Math.min(
+    ...transformed.points.map((point) => point.z - ANCHOR.z),
+  );
+  if (gameLength < 22 || forward < 12 || maxLateral > 58 || minForward < -18)
+    return -Infinity;
+  const sourceCenterDistance = Math.hypot(
+    chain.points[0][0],
+    chain.points[0][1],
+  );
   return (
     gameLength * 1.5 +
     forward * 1.2 -
@@ -177,7 +198,10 @@ function candidateScore(chain, transformed) {
 
 function selectCorridor() {
   const roads = HCMC_OSM_DATA.roads.filter(
-    (road) => DRIVABLE_TYPES.has(road[0]) && road[2]?.length >= 2 && polylineLength(road[2]) >= 22,
+    (road) =>
+      DRIVABLE_TYPES.has(road[0]) &&
+      road[2]?.length >= 2 &&
+      polylineLength(road[2]) >= 22,
   );
   let best = null;
   for (let index = 0; index < roads.length; index++) {
@@ -192,10 +216,15 @@ function selectCorridor() {
   }
 
   if (!best || !Number.isFinite(best.score)) {
-    const fallback = roads.reduce((winner, road) =>
-      !winner || polylineLength(road[2]) > polylineLength(winner[2]) ? road : winner,
-    null);
-    if (!fallback) throw new Error("HCMC OSM asset contains no driveable road geometry");
+    const fallback = roads.reduce(
+      (winner, road) =>
+        !winner || polylineLength(road[2]) > polylineLength(winner[2])
+          ? road
+          : winner,
+      null,
+    );
+    if (!fallback)
+      throw new Error("HCMC OSM asset contains no driveable road geometry");
     const sourcePoints = trimPolyline(fallback[2], TARGET_SOURCE_LENGTH);
     const transformed = transformRoute(sourcePoints);
     best = {
@@ -212,7 +241,9 @@ function selectCorridor() {
   }
 
   const gamePoints = best.transformed.points;
-  const gameLength = polylineLength(gamePoints.map((point) => [point.x, point.z]));
+  const gameLength = polylineLength(
+    gamePoints.map((point) => [point.x, point.z]),
+  );
   const width = clamp(best.chain.sourceWidth * PLAY_SCALE, 4.8, 6.4);
   return {
     id: "hcm-osm-corridor-1",
@@ -243,8 +274,12 @@ function sampleRoute(distanceValue) {
     const a = REAL_HCM_CORRIDOR.points[i - 1];
     const b = REAL_HCM_CORRIDOR.points[i];
     const length = Math.hypot(b.x - a.x, b.z - a.z);
-    if (travelled + length >= distance || i === REAL_HCM_CORRIDOR.points.length - 1) {
-      const t = length <= 1e-6 ? 0 : clamp((distance - travelled) / length, 0, 1);
+    if (
+      travelled + length >= distance ||
+      i === REAL_HCM_CORRIDOR.points.length - 1
+    ) {
+      const t =
+        length <= 1e-6 ? 0 : clamp((distance - travelled) / length, 0, 1);
       const tx = length <= 1e-6 ? 0 : (b.x - a.x) / length;
       const tz = length <= 1e-6 ? 1 : (b.z - a.z) / length;
       return {
@@ -264,8 +299,16 @@ function transformSourcePoint(x, z) {
   const dx = x - REAL_HCM_CORRIDOR.sourceOrigin[0];
   const dz = z - REAL_HCM_CORRIDOR.sourceOrigin[1];
   return {
-    x: ANCHOR.x + (dx * REAL_HCM_CORRIDOR.transformCos - dz * REAL_HCM_CORRIDOR.transformSin) * PLAY_SCALE,
-    z: ANCHOR.z + (dx * REAL_HCM_CORRIDOR.transformSin + dz * REAL_HCM_CORRIDOR.transformCos) * PLAY_SCALE,
+    x:
+      ANCHOR.x +
+      (dx * REAL_HCM_CORRIDOR.transformCos -
+        dz * REAL_HCM_CORRIDOR.transformSin) *
+        PLAY_SCALE,
+    z:
+      ANCHOR.z +
+      (dx * REAL_HCM_CORRIDOR.transformSin +
+        dz * REAL_HCM_CORRIDOR.transformCos) *
+        PLAY_SCALE,
   };
 }
 
@@ -288,7 +331,8 @@ function buildCorridorBuildings() {
     const position = transformSourcePoint(sx, sz);
     if (
       position.z < ANCHOR.z - 12 ||
-      position.z > Math.max(...REAL_HCM_CORRIDOR.points.map((point) => point.z)) + 24 ||
+      position.z >
+        Math.max(...REAL_HCM_CORRIDOR.points.map((point) => point.z)) + 24 ||
       Math.abs(position.x - ANCHOR.x) > 56
     )
       continue;
@@ -299,7 +343,8 @@ function buildCorridorBuildings() {
       [position.x, position.z],
       REAL_HCM_CORRIDOR.points.map((point) => [point.x, point.z]),
     );
-    if (roadDistance < REAL_HCM_CORRIDOR.width * 0.5 + Math.min(w, d) * 0.32) continue;
+    if (roadDistance < REAL_HCM_CORRIDOR.width * 0.5 + Math.min(w, d) * 0.32)
+      continue;
     buildings.push({
       x: position.x,
       z: position.z,
@@ -314,7 +359,9 @@ function buildCorridorBuildings() {
   return buildings;
 }
 
-export const REAL_HCM_CORRIDOR_BUILDINGS = Object.freeze(buildCorridorBuildings());
+export const REAL_HCM_CORRIDOR_BUILDINGS = Object.freeze(
+  buildCorridorBuildings(),
+);
 
 function pointToGameSegmentDistance(x, z, a, b) {
   return distanceToSegment([x, z], [a.x, a.z], [b.x, b.z]);
@@ -325,7 +372,12 @@ export function realCorridorDistance(x, z) {
   for (let i = 1; i < REAL_HCM_CORRIDOR.points.length; i++)
     best = Math.min(
       best,
-      pointToGameSegmentDistance(x, z, REAL_HCM_CORRIDOR.points[i - 1], REAL_HCM_CORRIDOR.points[i]),
+      pointToGameSegmentDistance(
+        x,
+        z,
+        REAL_HCM_CORRIDOR.points[i - 1],
+        REAL_HCM_CORRIDOR.points[i],
+      ),
     );
   return best;
 }
@@ -349,7 +401,8 @@ export function realCorridorSurface(x, z, margin = 0) {
   if (realCorridorBuildingAt(x, z, margin)) return "wall";
   const distance = realCorridorDistance(x, z);
   if (distance < REAL_HCM_CORRIDOR.width * 0.5 - margin) return "road";
-  if (distance < REAL_HCM_CORRIDOR.shoulderWidth * 0.5 - margin) return "ground";
+  if (distance < REAL_HCM_CORRIDOR.shoulderWidth * 0.5 - margin)
+    return "ground";
   return null;
 }
 
@@ -359,12 +412,17 @@ export function worldCollisionSurface(x, z, margin = 0) {
 }
 
 const stopA = sampleRoute(Math.min(9, REAL_HCM_CORRIDOR.length * 0.18));
-const stopB = sampleRoute(Math.max(REAL_HCM_CORRIDOR.length - 9, REAL_HCM_CORRIDOR.length * 0.72));
+const stopB = sampleRoute(
+  Math.max(REAL_HCM_CORRIDOR.length - 9, REAL_HCM_CORRIDOR.length * 0.72),
+);
 export const REAL_HCM_CORRIDOR_STOPS = Object.freeze([
   { x: stopA.x, z: stopA.z, name: "TRUNG TÂM · ĐIỂM A", realHcm: true },
   { x: stopB.x, z: stopB.z, name: "TRUNG TÂM · ĐIỂM B", realHcm: true },
 ]);
-export const WORLD_STOPS = Object.freeze([...MAP_STOPS, ...REAL_HCM_CORRIDOR_STOPS]);
+export const WORLD_STOPS = Object.freeze([
+  ...MAP_STOPS,
+  ...REAL_HCM_CORRIDOR_STOPS,
+]);
 
 export function makeWorldTraffic(rng, regularCount, rushCount = 0) {
   const traffic = makeMapTraffic(rng, regularCount, rushCount);
@@ -380,7 +438,8 @@ export function makeWorldTraffic(rng, regularCount, rushCount = 0) {
     vehicle.stream = 100 + (slot % 2);
     vehicle.direction = slot % 2 === 0 ? 1 : -1;
     vehicle.phase = ((slot + 0.5) / corridorCount) * REAL_HCM_CORRIDOR.length;
-    vehicle.speed = vehicle.kind === "car" ? 4.7 : vehicle.kind === "delivery" ? 5.2 : 5.8;
+    vehicle.speed =
+      vehicle.kind === "car" ? 4.7 : vehicle.kind === "delivery" ? 5.2 : 5.8;
     vehicle.avoidOffset = 0;
   }
   return traffic;
@@ -392,7 +451,8 @@ export function worldTrafficPose(vehicle, time) {
     return;
   }
   const length = REAL_HCM_CORRIDOR.length;
-  const travelled = ((vehicle.phase + time * vehicle.speed) % length + length) % length;
+  const travelled =
+    (((vehicle.phase + time * vehicle.speed) % length) + length) % length;
   const routeDistance = vehicle.direction > 0 ? travelled : length - travelled;
   const pose = sampleRoute(routeDistance);
   const tx = vehicle.direction > 0 ? pose.tx : -pose.tx;

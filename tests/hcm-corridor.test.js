@@ -28,7 +28,9 @@ test("playable corridor is derived from committed OpenStreetMap road geometry", 
 test("corridor stops are on the same visible and collision-backed road", () => {
   assert.equal(REAL_HCM_CORRIDOR_STOPS.length, 2);
   for (const stop of REAL_HCM_CORRIDOR_STOPS) {
-    assert.ok(realCorridorDistance(stop.x, stop.z) < REAL_HCM_CORRIDOR.width * 0.25);
+    assert.ok(
+      realCorridorDistance(stop.x, stop.z) < REAL_HCM_CORRIDOR.width * 0.25,
+    );
     assert.equal(realCorridorSurface(stop.x, stop.z, CONFIG.radius), "road");
     assert.equal(worldCollisionSurface(stop.x, stop.z, CONFIG.radius), "road");
   }
@@ -43,9 +45,16 @@ test("corridor stops are on the same visible and collision-backed road", () => {
 test("nearby OSM buildings remain solid while the corridor stays open", () => {
   assert.ok(REAL_HCM_CORRIDOR_BUILDINGS.length > 0);
   const building = REAL_HCM_CORRIDOR_BUILDINGS[0];
-  assert.equal(realCorridorSurface(building.x, building.z, CONFIG.radius), "wall");
-  const midpoint = REAL_HCM_CORRIDOR.points[Math.floor(REAL_HCM_CORRIDOR.points.length / 2)];
-  assert.notEqual(realCorridorSurface(midpoint.x, midpoint.z, CONFIG.radius), "wall");
+  assert.equal(
+    realCorridorSurface(building.x, building.z, CONFIG.radius),
+    "wall",
+  );
+  const midpoint =
+    REAL_HCM_CORRIDOR.points[Math.floor(REAL_HCM_CORRIDOR.points.length / 2)];
+  assert.notEqual(
+    realCorridorSurface(midpoint.x, midpoint.z, CONFIG.radius),
+    "wall",
+  );
 });
 
 test("a bounded share of live traffic follows the OSM corridor in both directions", () => {
@@ -58,14 +67,18 @@ test("a bounded share of live traffic follows the OSM corridor in both direction
     (vehicle) => vehicle.route === REAL_HCM_CORRIDOR.id,
   );
   assert.equal(corridorTraffic.length, Math.min(4, CONFIG.trafficCount));
-  assert.deepEqual(new Set(corridorTraffic.map((vehicle) => vehicle.direction)), new Set([-1, 1]));
+  assert.deepEqual(
+    new Set(corridorTraffic.map((vehicle) => vehicle.direction)),
+    new Set([-1, 1]),
+  );
 
   for (const time of [0, 3.2, 12.5, 29.75]) {
     for (const vehicle of corridorTraffic) {
       worldTrafficPose(vehicle, time);
       assert.ok(Number.isFinite(vehicle.x) && Number.isFinite(vehicle.z));
       assert.ok(
-        realCorridorDistance(vehicle.x, vehicle.z) < REAL_HCM_CORRIDOR.width * 0.5,
+        realCorridorDistance(vehicle.x, vehicle.z) <
+          REAL_HCM_CORRIDOR.width * 0.5,
         `corridor traffic ${vehicle.id} left the rendered road at ${time}s`,
       );
     }

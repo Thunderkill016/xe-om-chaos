@@ -2,12 +2,14 @@ import { CONFIG, clamp, random, distance } from "./config.js";
 import {
   AVENUES,
   surface,
-  collisionSurface,
-  makeTraffic,
-  trafficPose,
   hiddenLaneAt,
   vehicleClearance,
 } from "../world/map.js";
+import {
+  makeWorldTraffic,
+  worldCollisionSurface,
+  worldTrafficPose,
+} from "../world/HcmCorridor.js";
 import { Missions } from "./Missions.js";
 import { ChaosDirector } from "./ChaosDirector.js";
 
@@ -61,7 +63,7 @@ export class Run {
     this.flow = { combo: 1, actions: 0, energy: 0, idle: 0 };
     this.missions = new Missions(random(seed + ":missions"));
     this.director = new ChaosDirector(seed);
-    this.traffic = makeTraffic(
+    this.traffic = makeWorldTraffic(
       random(seed + ":traffic"),
       CONFIG.trafficCount,
       CONFIG.rushCount,
@@ -89,7 +91,7 @@ export class Run {
     this.discoveredLanes = new Set();
     this.reactionCooldown = 0;
     this.traffic.forEach((v) => {
-      trafficPose(v, 0);
+      worldTrafficPose(v, 0);
       // Preserve stream spacing. Vehicles that would start on top of the rider or pickup
       // remain temporarily inactive instead of being individually re-phased into another car.
       v.spawnBlocked =
@@ -210,14 +212,14 @@ export class Run {
       p.vz += (Math.cos(p.angle) * p.speed - p.vz) * dt * grip;
       const nx = p.x + p.vx * dt,
         nz = p.z + p.vz * dt;
-      if (collisionSurface(nx, nz, CONFIG.radius) !== "wall") {
+      if (worldCollisionSurface(nx, nz, CONFIG.radius) !== "wall") {
         this.stats.distance += Math.hypot(nx - p.x, nz - p.z);
         p.x = nx;
         p.z = nz;
       } else {
         // Slide along a wall and retain steering so no recovery can trap the player.
-        if (collisionSurface(nx, p.z, CONFIG.radius) !== "wall") p.x = nx;
-        if (collisionSurface(p.x, nz, CONFIG.radius) !== "wall") p.z = nz;
+        if (worldCollisionSurface(nx, p.z, CONFIG.radius) !== "wall") p.x = nx;
+        if (worldCollisionSurface(p.x, nz, CONFIG.radius) !== "wall") p.z = nz;
         if (p.speed > 7) this.crash();
         else {
           p.speed *= 0.92;
@@ -228,7 +230,7 @@ export class Run {
     }
     this.stats.maxSpeed = Math.max(this.stats.maxSpeed, p.speed);
     for (const v of this.traffic) {
-      trafficPose(v, this.time);
+      worldTrafficPose(v, this.time);
       const sideX = Math.cos(v.angle),
         sideZ = -Math.sin(v.angle),
         previousAvoid = v.avoidOffset ?? 0;
