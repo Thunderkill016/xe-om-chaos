@@ -26,12 +26,21 @@ jobs:
           git fetch origin "$GITHUB_HEAD_REF"
           git checkout -B "$GITHUB_HEAD_REF" "origin/$GITHUB_HEAD_REF"
           npm install --package-lock-only --ignore-scripts
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("src/view/PlayCanvasScene.js")
+          text = path.read_text()
+          old = "    const markerMaterial = this.marker.render?.material;"
+          new = "    const markerMaterial = /** @type {pc.StandardMaterial | null} */ (\\n      this.marker.render?.material ?? null\\n    );"
+          if old in text:
+              path.write_text(text.replace(old, new))
+          PY
           npx prettier --write package.json package-lock.json src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add package.json package-lock.json src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
-            git commit -m "Canonicalize PlayCanvas migration"
+            git commit -m "Fix PlayCanvas renderer typing"
             git push origin "HEAD:$GITHUB_HEAD_REF"
           fi
       - run: npm ci
