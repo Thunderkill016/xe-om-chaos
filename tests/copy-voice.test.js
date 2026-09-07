@@ -10,7 +10,8 @@ test("Vietnamese copy uses app-driver vocabulary", async () => {
   const html = await readFile("index.html", "utf8");
   for (const phrase of [
     "App vừa nổ cuốc",
-    "Bác tài chạy app",
+    "Chạy app",
+    "tài xế",
     "điểm đón",
     "trả đúng điểm",
     "cuốc kế",
@@ -20,14 +21,14 @@ test("Vietnamese copy uses app-driver vocabulary", async () => {
   const run = new Run("copy-voice");
   run.stats.distance = 10;
   const pickup = getMissionGuidance(run, "vi");
-  assert.match(pickup.phase, /Bác tài/i);
+  assert.match(pickup.phase, /Bác tài|tài xế/i);
   assert.match(pickup.phase, /điểm đón/i);
   assert.match(pickup.hint, /Cuốc vừa nổ/i);
 
   run.missions.phase = "dropoff";
   run.missions.deadline = 20;
   const dropoff = getMissionGuidance(run, "vi");
-  assert.match(dropoff.phase, /Bác tài/i);
+  assert.match(dropoff.phase, /Bác tài|tài xế/i);
   assert.match(dropoff.phase, /điểm trả/i);
   assert.match(dropoff.hint, /Khách đã lên xe/i);
 });
@@ -42,7 +43,7 @@ test("passengers and street events identify a subject", () => {
     assert.match(event.vi, /[.!?]/);
     assert.match(
       event.vi,
-      /Bác tài|Trời Sài Gòn|Giờ tan tầm|Đoạn phía trước|Đường phía trước|Xe buýt|Đường Bến Gió/i,
+      /Bác tài|tài xế|Trời Sài Gòn|Giờ tan tầm|Đoạn phía trước|Đường phía trước|Xe buýt|Đường Bến Gió/i,
     );
   }
 });
