@@ -30,6 +30,7 @@ const ROAD_WIDTH = {
   cycleway: 2.2,
   unclassified: 6,
 };
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const parseNum = (value) => {
   const match = String(value ?? "").match(/-?\d+(?:\.\d+)?/);
@@ -75,14 +76,15 @@ async function fetchTile(south, west, north, east, index, total) {
   for (const endpoint of ENDPOINTS) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30_000);
+      const timeout = setTimeout(() => controller.abort(), 35_000);
       try {
         console.log(`[OSM ${index}/${total}] ${endpoint} attempt ${attempt}`);
         const response = await fetch(endpoint, {
           method: "POST",
           headers: {
             "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-            "user-agent": "Xe-Om-Chaos-HCMC-Generator/1.0",
+            "user-agent": "Xe-Om-Chaos-HCMC-Generator/1.1",
+            accept: "application/json",
           },
           body,
           signal: controller.signal,
@@ -90,11 +92,13 @@ async function fetchTile(south, west, north, east, index, total) {
         if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
         const data = await response.json();
         clearTimeout(timeout);
+        console.log(`[OSM ${index}/${total}] OK ${data.elements?.length ?? 0} elements`);
         return data;
       } catch (error) {
         clearTimeout(timeout);
         lastError = error;
         console.warn(`[OSM ${index}/${total}] failed`, error?.message || error);
+        await sleep(attempt === 1 ? 1800 : 2800);
       }
     }
   }
@@ -103,29 +107,26 @@ async function fetchTile(south, west, north, east, index, total) {
 async function fetchOsm() {
   const latStep = (NORTH - SOUTH) / TILE_ROWS;
   const lonStep = (EAST - WEST) / TILE_COLS;
-  const tasks = [];
+  const total = TILE_ROWS * TILE_COLS;
+  const merged = new Map();
   let index = 0;
+  // Deliberately serial. Overpass rate-limits bursty tile requests; the Blender
+  // source also downloads tile-by-tile for reliability.
   for (let row = 0; row < TILE_ROWS; row++) {
     for (let col = 0; col < TILE_COLS; col++) {
       index++;
-      tasks.push(
-        fetchTile(
-          SOUTH + row * latStep,
-          WEST + col * lonStep,
-          SOUTH + (row + 1) * latStep,
-          WEST + (col + 1) * lonStep,
-          index,
-          TILE_ROWS * TILE_COLS,
-        ),
+      const data = await fetchTile(
+        SOUTH + row * latStep,
+        WEST + col * lonStep,
+        SOUTH + (row + 1) * latStep,
+        WEST + (col + 1) * lonStep,
+        index,
+        total,
       );
-    }
-  }
-  const merged = new Map();
-  for (let offset = 0; offset < tasks.length; offset += 3) {
-    const batch = await Promise.all(tasks.slice(offset, offset + 3));
-    for (const data of batch)
       for (const element of data.elements || [])
         merged.set(`${element.type}:${element.id}`, element);
+      if (index < total) await sleep(900);
+    }
   }
   return [...merged.values()];
 }
@@ -223,12 +224,8 @@ function buildData(elements) {
         tags.building || "yes",
       ]);
     } else if (tags.highway) {
-      if (["steps"].includes(tags.highway)) continue;
-      roads.push([
-        tags.highway,
-        round(roadWidth(tags)),
-        simplify(points, 28),
-      ]);
+      if (tags.highway === "steps") continue;
+      roads.push([tags.highway, round(roadWidth(tags)), simplify(points, 28)]);
     } else if (tags.natural === "water" || tags.waterway) {
       water.push([tags.waterway ? "line" : "area", simplify(points, 30)]);
     } else if (
@@ -238,7 +235,9 @@ function buildData(elements) {
       green.push(simplify(points, 28));
     }
   }
-  buildings.sort((a, b) => a[0] * a[0] + a[1] * a[1] - (b[0] * b[0] + b[1] * b[1]));
+  buildings.sort(
+    (a, b) => a[0] * a[0] + a[1] * a[1] - (b[0] * b[0] + b[1] * b[1]),
+  );
   return {
     generatedAt: new Date().toISOString(),
     bounds: { south: SOUTH, west: WEST, north: NORTH, east: EAST },
