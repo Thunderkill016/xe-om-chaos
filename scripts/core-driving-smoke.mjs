@@ -258,7 +258,9 @@ try {
     if (corridorWaypoint >= corridorPoints.length) {
       const end = REAL_HCM_CORRIDOR_STOPS[1];
       const distanceToEnd = Math.hypot(end.x - state.p.x, end.z - state.p.z);
-      const desired = new Set(state.p.speed > 0.2 || distanceToEnd < 4 ? ["s"] : []);
+      const desired = new Set(
+        state.p.speed > 0.2 || distanceToEnd < 4 ? ["s"] : [],
+      );
       await syncKeys(page, corridorHeld, desired);
       await page.waitForTimeout(80);
       continue;
