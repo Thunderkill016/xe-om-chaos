@@ -3,7 +3,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { Run } from "../src/game/Run.js";
 import { openingRoutes } from "./evaluate-routes.mjs";
-import { REAL_HCM_CORRIDOR_STOPS } from "../src/world/HcmCorridor.js";
+import {
+  REAL_HCM_CORRIDOR,
+  REAL_HCM_CORRIDOR_STOPS,
+} from "../src/world/HcmCorridor.js";
 
 const output = process.env.XEOM_OUTPUT || "output/core-driving";
 const base = (process.env.XEOM_URL || "http://127.0.0.1:4173").replace(
@@ -23,6 +26,26 @@ function check(name, value) {
   assert.ok(value, name);
   report.checks.push(name);
   console.log("PASS", name);
+}
+
+async function syncKeys(page, held, desired) {
+  for (const key of [...held]) {
+    if (!desired.has(key)) {
+      await page.keyboard.up(key);
+      held.delete(key);
+    }
+  }
+  for (const key of desired) {
+    if (!held.has(key)) {
+      await page.keyboard.down(key);
+      held.add(key);
+    }
+  }
+}
+
+async function releaseKeys(page, held) {
+  for (const key of held) await page.keyboard.up(key);
+  held.clear();
 }
 
 const browser = await chromium.launch({
@@ -102,8 +125,7 @@ try {
       phase: window.xeom.run.missions.phase,
       deliveries: window.xeom.run.stats.deliveries,
     }));
-    if (state.deliveries > 0) break;
-    if (waypoint >= route.length) break;
+    if (state.deliveries > 0 || waypoint >= route.length) break;
 
     const target = route[waypoint];
     const p = state.p;
@@ -134,23 +156,10 @@ try {
       ...(delta > 0.1 ? ["a"] : []),
       ...(delta < -0.1 ? ["d"] : []),
     ]);
-
-    for (const key of [...held]) {
-      if (!desired.has(key)) {
-        await page.keyboard.up(key);
-        held.delete(key);
-      }
-    }
-    for (const key of desired) {
-      if (!held.has(key)) {
-        await page.keyboard.down(key);
-        held.add(key);
-      }
-    }
+    await syncKeys(page, held, desired);
     await page.waitForTimeout(80);
   }
-
-  for (const key of held) await page.keyboard.up(key);
+  await releaseKeys(page, held);
 
   const outcome = await page.evaluate(() => ({
     deliveries: window.xeom.run.stats.deliveries,
@@ -178,10 +187,9 @@ try {
     "browser reports no blocking console errors",
     report.errors.length === 0,
   );
-
   await page.screenshot({ path: `${output}/after-route.png` });
 
-  const corridorEvidence = await page.evaluate((stops) => {
+  const corridorSetup = await page.evaluate((stops) => {
     const start = stops[0];
     const end = stops[1];
     const p = window.xeom.run.player;
@@ -190,29 +198,146 @@ try {
     p.speed = 0;
     p.vx = 0;
     p.vz = 0;
+    p.immune = 3;
     p.angle = Math.atan2(end.x - start.x, end.z - start.z);
-    window.xeom.run.missions.phase = "dropoff";
-    window.xeom.run.missions.destination = end;
+    window.xeom.run.director.update = () => {};
     return {
       start,
       end,
+      phase: window.xeom.run.missions.phase,
+      pickup: window.xeom.run.missions.pickup,
+      destination: window.xeom.run.missions.destination,
       corridorStats: window.xeom.view.realHcmCorridorStats,
       corridorTraffic: window.xeom.run.traffic.filter(
         (vehicle) => vehicle.route === "hcm-osm-corridor-1",
       ).length,
     };
   }, REAL_HCM_CORRIDOR_STOPS);
-  report.corridor = corridorEvidence;
+  report.corridor = corridorSetup;
+
   check(
     "playable HCMC OSM corridor is rendered with real source geometry",
-    corridorEvidence.corridorStats?.source === "OpenStreetMap" &&
-      corridorEvidence.corridorStats.gameLength > 20,
+    corridorSetup.corridorStats?.source === "OpenStreetMap" &&
+      corridorSetup.corridorStats.gameLength > 20,
+  );
+  check(
+    "second trip promotes the real HCMC corridor pickup",
+    corridorSetup.phase === "pickup" &&
+      Math.hypot(
+        corridorSetup.pickup.x - corridorSetup.start.x,
+        corridorSetup.pickup.z - corridorSetup.start.z,
+      ) < 0.5,
   );
   check(
     "live traffic is assigned to the HCMC OSM corridor",
-    corridorEvidence.corridorTraffic >= 2,
+    corridorSetup.corridorTraffic >= 2,
   );
-  await page.waitForTimeout(250);
+
+  await page.waitForFunction(
+    () => window.xeom.run.missions.phase === "dropoff",
+    null,
+    { timeout: 4000 },
+  );
+  check("corridor pickup boards through the normal stop dwell rule", true);
+
+  const corridorPoints = REAL_HCM_CORRIDOR.points.map(({ x, z }) => ({ x, z }));
+  let corridorWaypoint = 1;
+  let midpointCaptured = false;
+  const corridorHeld = new Set();
+  const corridorStartTime = Date.now();
+  const corridorDeliveriesBefore = await page.evaluate(
+    () => window.xeom.run.stats.deliveries,
+  );
+
+  while (Date.now() - corridorStartTime < 70000) {
+    const state = await page.evaluate(() => ({
+      p: window.xeom.run.player,
+      deliveries: window.xeom.run.stats.deliveries,
+    }));
+    if (state.deliveries > corridorDeliveriesBefore) break;
+    if (corridorWaypoint >= corridorPoints.length) {
+      const end = REAL_HCM_CORRIDOR_STOPS[1];
+      const distanceToEnd = Math.hypot(end.x - state.p.x, end.z - state.p.z);
+      const desired = new Set(state.p.speed > 0.2 || distanceToEnd < 4 ? ["s"] : []);
+      await syncKeys(page, corridorHeld, desired);
+      await page.waitForTimeout(80);
+      continue;
+    }
+
+    const target = corridorPoints[corridorWaypoint];
+    const p = state.p;
+    const distance = Math.hypot(target.x - p.x, target.z - p.z);
+    const targetAngle = Math.atan2(target.x - p.x, target.z - p.z) - p.angle;
+    const delta = Math.atan2(Math.sin(targetAngle), Math.cos(targetAngle));
+    if (distance < 2.4) {
+      corridorWaypoint += 1;
+      continue;
+    }
+
+    const finalSegment = corridorWaypoint >= corridorPoints.length - 1;
+    const wantedSpeed =
+      finalSegment && distance < 5
+        ? 0
+        : Math.abs(delta) > 0.55
+          ? 1.5
+          : Math.abs(delta) > 0.3
+            ? 4.5
+            : 7;
+    const desired = new Set([
+      ...(p.speed < wantedSpeed ? ["w"] : []),
+      ...(p.speed > wantedSpeed + 0.8 ? ["s"] : []),
+      ...(delta > 0.075 ? ["a"] : []),
+      ...(delta < -0.075 ? ["d"] : []),
+    ]);
+    await syncKeys(page, corridorHeld, desired);
+
+    if (!midpointCaptured && corridorWaypoint >= corridorPoints.length / 2) {
+      await page.evaluate(() => {
+        document.getElementById("reaction").textContent = "";
+      });
+      await page.waitForTimeout(120);
+      await page.screenshot({ path: `${output}/hcm-corridor-mid.png` });
+      midpointCaptured = true;
+    }
+    await page.waitForTimeout(80);
+  }
+  await releaseKeys(page, corridorHeld);
+
+  const corridorOutcome = await page.evaluate((end) => {
+    const p = window.xeom.run.player;
+    return {
+      deliveries: window.xeom.run.stats.deliveries,
+      crashes: window.xeom.run.stats.crashes,
+      distanceToEnd: Math.hypot(end.x - p.x, end.z - p.z),
+      player: { x: p.x, z: p.z, speed: p.speed },
+      activeCorridorTraffic: window.xeom.run.traffic.filter(
+        (vehicle) => vehicle.active && vehicle.route === "hcm-osm-corridor-1",
+      ).length,
+    };
+  }, REAL_HCM_CORRIDOR_STOPS[1]);
+  report.corridorOutcome = corridorOutcome;
+
+  check(
+    "browser controls drive the motorcycle across the playable HCMC corridor",
+    corridorOutcome.distanceToEnd < 5.5,
+  );
+  check(
+    "corridor trip completes through the normal delivery rule",
+    corridorOutcome.deliveries > corridorDeliveriesBefore,
+  );
+  check(
+    "corridor keeps live bidirectional traffic during the drive",
+    corridorOutcome.activeCorridorTraffic >= 2,
+  );
+  check(
+    "corridor drive adds no blocking console errors",
+    report.errors.length === 0,
+  );
+
+  await page.evaluate(() => {
+    document.getElementById("reaction").textContent = "";
+  });
+  await page.waitForTimeout(150);
   await page.screenshot({ path: `${output}/hcm-corridor.png` });
   await context.close();
 
