@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#162c2d" />
     <meta
       name="description"
-      content="Chạy xe ôm giữa Sài Gòn, luồn qua dòng xe, tìm hẻm tắt và đưa khách tới nơi trước khi hết ca."
+      content="Chạy một cuốc xe ôm giữa Sài Gòn: né giờ tan tầm, kiếm hẻm thông và đưa khách tới nơi cho trọn cuốc."
     />
     <title>XE ÔM CHAOS · SAIGON</title>
     <link
@@ -43,16 +43,16 @@
     <main>
       <section id="welcome" class="welcome">
         <div class="edition">
-          <span class="live-dot"></span> ĐƯỜNG ĐÔNG. HẺM HẸP. VẪN PHẢI TỚI.
+          <span class="live-dot"></span> Sài Gòn đang đông xe. Khách đang chờ ngoài kia.
         </div>
         <h1>XE ÔM<br /><span>CHAOS.</span></h1>
         <div class="city-stamp"><span>↗</span> SÀI GÒN</div>
         <p class="tagline">
-          Bạn biết đường tắt.<br />Khách thì chưa chắc dám tin.
+          Đường lớn kẹt thì kiếm hẻm.<br />Miễn đưa khách tới nơi là được.
         </p>
         <div class="start-actions">
-          <button id="start" class="primary">LÊN XE THÔI ↗</button
-          ><span>3 PHÚT · MỖI NGÀY MỘT CUỐC MỚI</span>
+          <button id="start" class="primary">NỔ MÁY, ĐI THÔI ↗</button
+          ><span>3 phút một ca · mỗi ngày một chuyến khác</span>
         </div>
         <div class="quick-controls">
           <span><kbd>W A S D</kbd> <span>Lái xe</span></span
@@ -63,16 +63,16 @@
       </section>
       <div id="postcard" class="postcard">
         <span>10°46′ N · 106°41′ E</span
-        ><strong>ĐƯỜNG ĐÔNG.<br />ĐỜI VUI.</strong
-        ><small>CỨ BIẾT ĐƯỜNG LÀ CÒN CHẠY ĐƯỢC.</small>
+        ><strong>TRỜI SÀI GÒN:<br />NẮNG ĐÓ, MƯA ĐÓ.</strong
+        ><small>CÒN KHÁCH THÌ LÚC NÀO CŨNG ĐANG VỘI.</small>
       </div>
       <section id="hud" hidden>
         <div class="run-strip">
-          <div><small>HẾT CA TRONG</small><strong id="timer">3:00</strong></div>
+          <div><small>CÒN</small><strong id="timer">3:00</strong></div>
           <div class="score-block">
             <small>ĐIỂM</small><strong id="score">0</strong>
           </div>
-          <div><small>TIỀN CƯỚC</small><strong id="fare">0 ₫</strong></div>
+          <div><small>TIỀN CUỐC</small><strong id="fare">0 ₫</strong></div>
         </div>
         <div class="mission-stack">
           <div id="mission-card" class="mission-card">
@@ -97,7 +97,7 @@
           <div id="chaos" class="chaos" role="status"></div>
         </div>
         <div class="flow-panel">
-          <span>NHỊP</span><strong id="combo">×1</strong>
+          <span>NHỊP LÁI</span><strong id="combo">×1</strong>
           <div class="flow-track"><i id="flow-meter"></i></div>
         </div>
         <div id="reaction" class="reaction" role="status"></div>
@@ -118,15 +118,15 @@
         <p id="ride-hint" class="ride-hint"></p>
         <div class="touch-controls" id="touch-controls">
           <div class="steering">
-            <button data-input="left" aria-label="Rẽ trái">◀</button
-            ><button data-input="right" aria-label="Rẽ phải">▶</button>
+            <button data-input="left" aria-label="Quẹo trái">◀</button
+            ><button data-input="right" aria-label="Quẹo phải">▶</button>
           </div>
           <div class="pedals">
             <button data-input="horn" aria-label="Bóp còi" class="horn">
               BÍP!</button
             ><button data-input="boost" aria-label="Bứt tốc" class="boost">
               ϟ</button
-            ><button data-input="brake" aria-label="Phanh" class="brake">
+            ><button data-input="brake" aria-label="Thắng" class="brake">
               ■</button
             ><button data-input="throttle" aria-label="Giữ ga" class="gas">
               GA ↑
@@ -137,7 +137,7 @@
       <dialog id="settings">
         <form method="dialog">
           <div class="dialog-heading">
-            <h2>CHỈNH MỘT CHÚT</h2>
+            <h2>CHỈNH XE CHÚT</h2>
             <button aria-label="Đóng cài đặt">✕</button>
           </div>
           <label
@@ -145,18 +145,18 @@
             ><input id="volume" type="range" min="0" max="100" value="45"
           /></label>
           <label
-            ><span>Chất lượng hình ảnh</span
+            ><span>Hình ảnh</span
             ><select id="quality">
               <option value="auto">Tự động</option>
-              <option value="high">Cao</option>
-              <option value="low">Thấp</option>
+              <option value="high">Đẹp</option>
+              <option value="low">Nhẹ máy</option>
             </select></label
           >
           <label
             ><span>Giảm chuyển động</span><input id="motion" type="checkbox"
           /></label>
           <label
-            ><span>Điều khiển tay trái</span
+            ><span>Thuận tay trái</span
             ><input id="left-handed" type="checkbox"
           /></label>
           <label
@@ -168,27 +168,27 @@
               max="115"
               value="100"
           /></label>
-          <button class="primary">XONG RỒI</button>
+          <button class="primary">XONG</button>
         </form>
       </dialog>
       <dialog id="pause-dialog">
-        <h2>TẠM NGHỈ CHÚT.</h2>
-        <button id="resume" class="primary">LÁI TIẾP ↗</button
+        <h2>TẠM DỪNG NHA</h2>
+        <button id="resume" class="primary">CHẠY TIẾP ↗</button
         ><button id="restart-pause" class="secondary">Chạy lại từ đầu</button>
       </dialog>
       <dialog id="results">
         <div class="result-head">XE ÔM CHAOS <span>SÀI GÒN</span></div>
-        <p class="eyebrow">HẾT CA. CÓ CHUYỆN ĐỂ KỂ.</p>
+        <p class="eyebrow">Hết ca rồi. Coi hôm nay chạy ra sao.</p>
         <h2 id="result-title"></h2>
         <div class="result-score" id="result-score"></div>
         <p id="best-message"></p>
         <div class="result-grid" id="result-grid"></div>
         <p class="challenge-code" id="challenge-code"></p>
-        <button id="again" class="primary">THÊM MỘT CUỐC ↗</button>
+        <button id="again" class="primary">CHẠY THÊM CUỐC NỮA ↗</button>
         <div class="result-buttons">
-          <button id="share">Thách bạn bè</button
-          ><button id="save-card">Lưu ảnh kết quả</button
-          ><button id="save-replay">Lưu dữ liệu lượt chơi</button>
+          <button id="share">Gửi bạn coi</button
+          ><button id="save-card">Lưu ảnh</button
+          ><button id="save-replay">Lưu lượt chạy</button>
         </div>
         <p id="share-status" role="status"></p>
       </dialog>
@@ -196,7 +196,7 @@
       <pre id="debug" hidden></pre>
     </main>
     <footer id="footer">
-      <span>THÀNH PHỐ QUEN. MỖI CUỐC MỘT CHUYỆN.</span
+      <span>SÀI GÒN CÒN ĐÔNG. MAI CHẠY TIẾP.</span
       ><span>BẢN THỬ NỘI BỘ · 01</span>
     </footer>
     <script type="module" src="./src/main.js"></script>
