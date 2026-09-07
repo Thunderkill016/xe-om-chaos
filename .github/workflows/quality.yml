@@ -37,12 +37,15 @@ jobs:
           if old in text:
               path.write_text(text.replace(old, new))
           PY
-          npx prettier --write package.json package-lock.json src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
+          if grep -q "function interpolateSourceRoute" src/world/HcmCorridor.js; then
+            node scripts/patch-real-saigon-road.mjs
+          fi
+          npx prettier --write package.json package-lock.json src/world/HcmCorridor.js src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package.json package-lock.json src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
-            git commit -m "Fix PlayCanvas renderer typing"
+            git add package.json package-lock.json src/world/HcmCorridor.js src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
+            git commit -m "Use real OSM road graph for Saigon slice"
             git push origin "HEAD:$GITHUB_HEAD_REF"
           fi
       - run: npm ci
