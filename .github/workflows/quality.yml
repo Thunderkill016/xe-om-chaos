@@ -7,9 +7,6 @@ on:
       - "chatgpt/**"
   pull_request:
 
-permissions:
-  contents: write
-
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -20,39 +17,6 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Canonicalize PlayCanvas migration
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          git fetch origin "$GITHUB_HEAD_REF"
-          git checkout -B "$GITHUB_HEAD_REF" "origin/$GITHUB_HEAD_REF"
-          npm install --package-lock-only --ignore-scripts
-          python - <<'PY'
-          from pathlib import Path
-          path = Path("src/view/PlayCanvasScene.js")
-          text = path.read_text()
-          old = "    const markerMaterial = this.marker.render?.material;"
-          new = '''    const markerMaterial = /** @type {pc.StandardMaterial | null} */ (
-            this.marker.render?.material ?? null
-          );'''
-          if old in text:
-              path.write_text(text.replace(old, new))
-          PY
-          if grep -q "function interpolateSourceRoute" src/world/HcmCorridor.js; then
-            node scripts/patch-real-saigon-road.mjs
-          fi
-          if grep -q "const startSnap = nearestRoadNode(graph, startAnchor)" src/world/HcmCorridor.js; then
-            node scripts/patch-connected-saigon-snaps.mjs
-          fi
-          node scripts/patch-saigon-anchor-and-traffic.mjs
-          node scripts/patch-corridor-traffic-mutation.mjs
-          npx prettier --write package.json package-lock.json src/world/HcmCorridor.js src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package.json package-lock.json src/world/HcmCorridor.js src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
-            git commit -m "Fix HCMC corridor traffic pose state"
-            git push origin "HEAD:$GITHUB_HEAD_REF"
-          fi
       - run: npm ci
       - name: Verify committed HCMC context exists
         run: |
@@ -62,21 +26,6 @@ jobs:
       - name: Opening route diagnostic
         run: |
           node --input-type=module -e 'import { driveOpeningRoute } from "./scripts/evaluate-routes.mjs"; const { run, measurement } = driveOpeningRoute("2026-09-06", "hem26"); console.log(JSON.stringify({ measurement, crashes: run.moments.filter((m) => m.type === "crash") }, null, 2));'
-      - name: Real Saigon corridor diagnostic
-        run: |
-          node --input-type=module - <<'NODE'
-          import { CONFIG, random } from './src/game/config.js';
-          import { REAL_HCM_CORRIDOR, REAL_HCM_CORRIDOR_BUILDINGS, makeWorldTraffic, realCorridorDistance, worldTrafficPose } from './src/world/HcmCorridor.js';
-          const traffic = makeWorldTraffic(random('diag'), CONFIG.trafficCount, CONFIG.rushCount).filter(v => v.route === REAL_HCM_CORRIDOR.id);
-          for (const v of traffic) worldTrafficPose(v, 0);
-          console.log(JSON.stringify({
-            corridor: REAL_HCM_CORRIDOR,
-            end: REAL_HCM_CORRIDOR.points.at(-1),
-            buildings: REAL_HCM_CORRIDOR_BUILDINGS.length,
-            firstBuildings: REAL_HCM_CORRIDOR_BUILDINGS.slice(0, 4),
-            traffic: traffic.map(v => ({ id:v.id, lane:v.lane, dir:v.corridorDirection, x:v.x, z:v.z, distance:realCorridorDistance(v.x,v.z) }))
-          }, null, 2));
-          NODE
       - run: npm run quality
       - name: Package both language editions
         run: npm run package
