@@ -345,7 +345,10 @@ export function trafficPose(vehicle, time) {
     // ahead of timetable" regardless of the stream's world-axis direction.
     if (vehicle.speed > 0 && Number.isFinite(vehicle.paceAmplitude)) {
       const freedom = junctionFreedom(coordinate);
-      const speedScale = Math.min(1, Math.max(0, vehicle.speed / TRAFFIC_SPEED));
+      const speedScale = Math.min(
+        1,
+        Math.max(0, vehicle.speed / TRAFFIC_SPEED),
+      );
       const pace =
         Math.sin(time * vehicle.paceFrequency + vehicle.pacePhase) *
         vehicle.paceAmplitude *
