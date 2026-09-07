@@ -61,7 +61,9 @@ try {
   check("throttle accelerates motorcycle", true);
 
   await page.keyboard.down("a");
-  await page.waitForFunction(() => Math.abs(window.xeom.run.player.lean) > 0.03);
+  await page.waitForFunction(
+    () => Math.abs(window.xeom.run.player.lean) > 0.03,
+  );
   check("steering produces visible bike lean", true);
   await page.keyboard.up("a");
   await page.keyboard.up("w");
@@ -99,8 +101,7 @@ try {
     const target = route[waypoint];
     const p = state.p;
     const distance = Math.hypot(target.x - p.x, target.z - p.z);
-    const targetAngle =
-      Math.atan2(target.x - p.x, target.z - p.z) - p.angle;
+    const targetAngle = Math.atan2(target.x - p.x, target.z - p.z) - p.angle;
     const delta = Math.atan2(Math.sin(targetAngle), Math.cos(targetAngle));
 
     if (
