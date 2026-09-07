@@ -40,12 +40,15 @@ jobs:
           if grep -q "function interpolateSourceRoute" src/world/HcmCorridor.js; then
             node scripts/patch-real-saigon-road.mjs
           fi
+          if grep -q "const startSnap = nearestRoadNode(graph, startAnchor)" src/world/HcmCorridor.js; then
+            node scripts/patch-connected-saigon-snaps.mjs
+          fi
           npx prettier --write package.json package-lock.json src/world/HcmCorridor.js src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add package.json package-lock.json src/world/HcmCorridor.js src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
-            git commit -m "Use real OSM road graph for Saigon slice"
+            git commit -m "Snap Saigon slice to connected OSM roads"
             git push origin "HEAD:$GITHUB_HEAD_REF"
           fi
       - run: npm ci
