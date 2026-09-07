@@ -7,6 +7,9 @@ on:
       - "chatgpt/**"
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -18,19 +21,20 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Canonicalize locale split formatting
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/chatgpt/')
+        run: |
+          npm run format
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src tests scripts index.html en/index.html style.css package.json
+            git commit -m "Format standalone locale editions"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
       - name: Opening route diagnostic
         run: |
           node --input-type=module -e 'import { driveOpeningRoute } from "./scripts/evaluate-routes.mjs"; const { run, measurement } = driveOpeningRoute("2026-09-06", "hem26"); console.log(JSON.stringify({ measurement, crashes: run.moments.filter((m) => m.type === "crash") }, null, 2));'
-      - name: Locale split format probe
-        run: |
-          echo '--- src/platform/UI.js ---'
-          npx prettier src/platform/UI.js
-          echo '--- src/platform/Share.js ---'
-          npx prettier src/platform/Share.js
-          echo '--- scripts/core-driving-smoke.mjs ---'
-          npx prettier scripts/core-driving-smoke.mjs
-          echo '--- index.html ---'
-          npx prettier index.html
       - run: npm run quality
 
   browser-smoke:
