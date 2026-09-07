@@ -557,7 +557,9 @@ export class PlayCanvasScene {
 
     const target = run.missions.target;
     this.marker.setPosition(target.x, 0.18, target.z);
-    const markerMaterial = this.marker.render?.material;
+    const markerMaterial = /** @type {pc.StandardMaterial | null} */ (
+      this.marker.render?.material ?? null
+    );
     if (markerMaterial) {
       markerMaterial.diffuse = colour(
         run.missions.phase === "pickup" ? 0xffc668 : 0x85f3c5,
