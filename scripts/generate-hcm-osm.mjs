@@ -7,8 +7,8 @@ const EAST = 106.716;
 const TILE_ROWS = 3;
 const TILE_COLS = 3;
 const ENDPOINTS = [
-  "https://overpass-api.de/api/interpreter",
-  "https://overpass.kumi.systems/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
 ];
 const METERS_PER_DEG_LAT = 111_320;
 const CENTER_LAT = (SOUTH + NORTH) * 0.5;
@@ -74,32 +74,30 @@ async function fetchTile(south, west, north, east, index, total) {
   const body = new URLSearchParams({ data: queryFor(south, west, north, east) });
   let lastError;
   for (const endpoint of ENDPOINTS) {
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 35_000);
-      try {
-        console.log(`[OSM ${index}/${total}] ${endpoint} attempt ${attempt}`);
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-            "user-agent": "Xe-Om-Chaos-HCMC-Generator/1.1",
-            accept: "application/json",
-          },
-          body,
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-        const data = await response.json();
-        clearTimeout(timeout);
-        console.log(`[OSM ${index}/${total}] OK ${data.elements?.length ?? 0} elements`);
-        return data;
-      } catch (error) {
-        clearTimeout(timeout);
-        lastError = error;
-        console.warn(`[OSM ${index}/${total}] failed`, error?.message || error);
-        await sleep(attempt === 1 ? 1800 : 2800);
-      }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25_000);
+    try {
+      console.log(`[OSM ${index}/${total}] ${endpoint}`);
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+          "user-agent": "Xe-Om-Chaos-HCMC-Generator/1.2",
+          accept: "application/json",
+        },
+        body,
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      const data = await response.json();
+      clearTimeout(timeout);
+      console.log(`[OSM ${index}/${total}] OK ${data.elements?.length ?? 0} elements`);
+      return data;
+    } catch (error) {
+      clearTimeout(timeout);
+      lastError = error;
+      console.warn(`[OSM ${index}/${total}] failed`, error?.message || error);
+      await sleep(900);
     }
   }
   throw new Error(`Could not fetch tile ${index}/${total}: ${lastError?.message || lastError}`);
@@ -110,24 +108,42 @@ async function fetchOsm() {
   const total = TILE_ROWS * TILE_COLS;
   const merged = new Map();
   let index = 0;
-  // Deliberately serial. Overpass rate-limits bursty tile requests; the Blender
-  // source also downloads tile-by-tile for reliability.
+  let successfulTiles = 0;
+  let failedTiles = 0;
+
+  // Deliberately serial. Public Overpass instances dislike bursty cloud traffic.
+  // A temporary tile outage must not block the entire game build: we accept a
+  // partial real-world context as long as enough downtown tiles are available.
   for (let row = 0; row < TILE_ROWS; row++) {
     for (let col = 0; col < TILE_COLS; col++) {
       index++;
-      const data = await fetchTile(
-        SOUTH + row * latStep,
-        WEST + col * lonStep,
-        SOUTH + (row + 1) * latStep,
-        WEST + (col + 1) * lonStep,
-        index,
-        total,
-      );
-      for (const element of data.elements || [])
-        merged.set(`${element.type}:${element.id}`, element);
-      if (index < total) await sleep(900);
+      try {
+        const data = await fetchTile(
+          SOUTH + row * latStep,
+          WEST + col * lonStep,
+          SOUTH + (row + 1) * latStep,
+          WEST + (col + 1) * lonStep,
+          index,
+          total,
+        );
+        successfulTiles++;
+        for (const element of data.elements || [])
+          merged.set(`${element.type}:${element.id}`, element);
+      } catch (error) {
+        failedTiles++;
+        console.warn(`[OSM ${index}/${total}] SKIPPED: ${error?.message || error}`);
+      }
+      if (index < total) await sleep(550);
     }
   }
+
+  console.log(
+    `OSM tile result: ${successfulTiles}/${total} succeeded, ${failedTiles} skipped, ${merged.size} unique elements`,
+  );
+  if (successfulTiles < 4 || merged.size < 5_000)
+    throw new Error(
+      `Not enough HCMC OSM data for a reliable build (${successfulTiles}/${total} tiles, ${merged.size} elements)`,
+    );
   return [...merged.values()];
 }
 function wayPoints(way, nodes) {
@@ -212,7 +228,8 @@ function buildData(elements) {
     if (points.length < 2) continue;
     if (tags.building && points.length >= 3) {
       const bounds = orientedBounds(points);
-      if (!bounds || bounds.w * bounds.d < 28 || bounds.w > 170 || bounds.d > 170) continue;
+      if (!bounds || bounds.w * bounds.d < 28 || bounds.w > 170 || bounds.d > 170)
+        continue;
       const h = buildingHeight(tags, way.id);
       buildings.push([
         round(bounds.x),
