@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#162c2d" />
+    <meta
+      name="description"
+      content="Ride through Saigon traffic, cut through alleys, and get your passenger there before the shift ends."
+    />
+    <title>XE ÔM CHAOS · SAIGON</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f47845'/%3E%3Ctext x='32' y='47' font-size='44' text-anchor='middle'%3E✦%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../node_modules/three/build/three.module.js",
+          "three/addons/": "../node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Xe Ôm Chaos 3D world"></canvas>
+    <div class="vignette"></div>
+    <header class="topbar">
+      <a class="wordmark" href="./" aria-label="Xe Ôm Chaos home"
+        >XE ÔM <span>CHAOS</span><small>SAIGON · VIETNAM</small></a
+      >
+      <div class="top-actions">
+        <span id="daily-label" class="date-stamp"></span
+        ><button id="sound" aria-label="Toggle sound">♫</button
+        ><button id="settings-open" aria-label="Settings">⚙</button
+        ><button id="pause" aria-label="Pause" hidden>Ⅱ</button>
+      </div>
+    </header>
+    <main>
+      <section id="welcome" class="welcome">
+        <div class="edition">
+          <span class="live-dot"></span> SAIGON TRAFFIC. TIGHT ALLEYS. GET THERE ANYWAY.
+        </div>
+        <h1>XE ÔM<br /><span>CHAOS.</span></h1>
+        <div class="city-stamp"><span>↗</span> SAIGON</div>
+        <p class="tagline">
+          You know the shortcuts.<br />Your passenger is trying not to look nervous.
+        </p>
+        <div class="start-actions">
+          <button id="start" class="primary">LET'S RIDE ↗</button
+          ><span>3 MINUTES · A NEW RUN EVERY DAY</span>
+        </div>
+        <div class="quick-controls">
+          <span><kbd>W A S D</kbd> <span>Ride</span></span
+          ><span><kbd>SPACE</kbd> <span>Horn</span></span
+          ><span><kbd>SHIFT</kbd> <span>Boost</span></span>
+        </div>
+        <p class="welcome-best" id="welcome-best"></p>
+      </section>
+      <div id="postcard" class="postcard">
+        <span>10°46′ N · 106°41′ E</span
+        ><strong>BUSY STREETS.<br />GOOD STORIES.</strong
+        ><small>KNOW THE CITY. MAKE YOUR MOVE.</small>
+      </div>
+      <section id="hud" hidden>
+        <div class="run-strip">
+          <div><small>SHIFT ENDS IN</small><strong id="timer">3:00</strong></div>
+          <div class="score-block"><small>SCORE</small><strong id="score">0</strong></div>
+          <div><small>FARES</small><strong id="fare">0 ₫</strong></div>
+        </div>
+        <div class="mission-stack">
+          <div id="mission-card" class="mission-card">
+            <div id="mission-icon" class="mission-icon">↗</div>
+            <div class="mission-copy">
+              <small id="mission-phase"></small
+              ><strong id="destination"></strong
+              ><span id="mission-detail"></span
+              ><span id="passenger-preference" class="passenger-preference"></span>
+            </div>
+            <b id="direction">↑</b>
+            <progress id="boarding-progress" max="1" value="0" hidden></progress>
+          </div>
+          <div id="chaos" class="chaos" role="status"></div>
+        </div>
+        <div class="flow-panel">
+          <span>FLOW</span><strong id="combo">×1</strong>
+          <div class="flow-track"><i id="flow-meter"></i></div>
+        </div>
+        <div id="reaction" class="reaction" role="status"></div>
+        <div class="map-panel">
+          <canvas
+            id="minimap"
+            width="200"
+            height="200"
+            aria-label="Street and destination map"
+          ></canvas
+          ><span id="district"></span>
+        </div>
+        <div class="speed-panel">
+          <strong id="speed">0</strong><span>KM/H</span>
+          <div class="boost-track"><i id="boost-meter"></i></div>
+          <small>BOOST <kbd>SHIFT</kbd></small>
+        </div>
+        <p id="ride-hint" class="ride-hint"></p>
+        <div class="touch-controls" id="touch-controls">
+          <div class="steering">
+            <button data-input="left" aria-label="Turn left">◀</button
+            ><button data-input="right" aria-label="Turn right">▶</button>
+          </div>
+          <div class="pedals">
+            <button data-input="horn" aria-label="Horn" class="horn">BEEP!</button
+            ><button data-input="boost" aria-label="Boost" class="boost">ϟ</button
+            ><button data-input="brake" aria-label="Brake" class="brake">■</button
+            ><button data-input="throttle" aria-label="Throttle" class="gas">GO ↑</button>
+          </div>
+        </div>
+      </section>
+      <dialog id="settings">
+        <form method="dialog">
+          <div class="dialog-heading">
+            <h2>TUNE YOUR RIDE</h2>
+            <button aria-label="Close settings">✕</button>
+          </div>
+          <label
+            ><span>Sound</span
+            ><input id="volume" type="range" min="0" max="100" value="45"
+          /></label>
+          <label
+            ><span>Graphics</span
+            ><select id="quality">
+              <option value="auto">Auto</option>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+            </select></label
+          >
+          <label
+            ><span>Reduce motion</span><input id="motion" type="checkbox"
+          /></label>
+          <label
+            ><span>Left-handed controls</span
+            ><input id="left-handed" type="checkbox"
+          /></label>
+          <label
+            ><span>Touch button size</span
+            ><input id="touch-scale" type="range" min="85" max="115" value="100"
+          /></label>
+          <button class="primary">DONE</button>
+        </form>
+      </dialog>
+      <dialog id="pause-dialog">
+        <h2>TAKE A BREAK.</h2>
+        <button id="resume" class="primary">KEEP RIDING ↗</button
+        ><button id="restart-pause" class="secondary">Restart run</button>
+      </dialog>
+      <dialog id="results">
+        <div class="result-head">XE ÔM CHAOS <span>SAIGON</span></div>
+        <p class="eyebrow">SHIFT OVER. STORY WORTH TELLING.</p>
+        <h2 id="result-title"></h2>
+        <div class="result-score" id="result-score"></div>
+        <p id="best-message"></p>
+        <div class="result-grid" id="result-grid"></div>
+        <p class="challenge-code" id="challenge-code"></p>
+        <button id="again" class="primary">ONE MORE RUN ↗</button>
+        <div class="result-buttons">
+          <button id="share">Challenge a friend</button
+          ><button id="save-card">Save result card</button
+          ><button id="save-replay">Save run data</button>
+        </div>
+        <p id="share-status" role="status"></p>
+      </dialog>
+      <div id="fatal" hidden role="alert"></div>
+      <pre id="debug" hidden></pre>
+    </main>
+    <footer id="footer">
+      <span>SAME CITY. EVERY RIDE HAS A STORY.</span
+      ><span>INTERNATIONAL PLAYTEST · 01</span>
+    </footer>
+    <script type="module" src="../src/main.js"></script>
+  </body>
+</html>
