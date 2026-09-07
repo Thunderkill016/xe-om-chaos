@@ -77,7 +77,11 @@ export class PlayCanvasScene {
     this.player = this.makeScooter("PLAYER", 0xf47d48);
     this.app.root.addChild(this.player);
     this.traffic = [];
-    for (let index = 0; index < CONFIG.trafficCount + CONFIG.rushCount; index++) {
+    for (
+      let index = 0;
+      index < CONFIG.trafficCount + CONFIG.rushCount;
+      index++
+    ) {
       const entity = this.makeVehicle(index);
       entity.enabled = false;
       this.app.root.addChild(entity);
@@ -104,15 +108,23 @@ export class PlayCanvasScene {
     const menuNext = REAL_HCM_CORRIDOR.points[1];
     const menuFrame = segmentFrame(menuStart, menuNext);
     this.menuCamera = {
-      x: menuStart.x - menuFrame.dx / menuFrame.length * 13,
+      x: menuStart.x - (menuFrame.dx / menuFrame.length) * 13,
       y: 6.2,
-      z: menuStart.z - menuFrame.dz / menuFrame.length * 13,
-      tx: menuStart.x + menuFrame.dx / menuFrame.length * 22,
+      z: menuStart.z - (menuFrame.dz / menuFrame.length) * 13,
+      tx: menuStart.x + (menuFrame.dx / menuFrame.length) * 22,
       ty: 1.7,
-      tz: menuStart.z + menuFrame.dz / menuFrame.length * 22,
+      tz: menuStart.z + (menuFrame.dz / menuFrame.length) * 22,
     };
-    this.camera.setPosition(this.menuCamera.x, this.menuCamera.y, this.menuCamera.z);
-    this.camera.lookAt(this.menuCamera.tx, this.menuCamera.ty, this.menuCamera.tz);
+    this.camera.setPosition(
+      this.menuCamera.x,
+      this.menuCamera.y,
+      this.menuCamera.z,
+    );
+    this.camera.lookAt(
+      this.menuCamera.tx,
+      this.menuCamera.ty,
+      this.menuCamera.tz,
+    );
 
     this.app.start();
     window.addEventListener("resize", () => this.resize());
@@ -209,7 +221,11 @@ export class PlayCanvasScene {
 
   buildStreetWalls() {
     const road = REAL_HCM_CORRIDOR;
-    for (let distance = 9, block = 0; distance < road.length - 8; distance += 10, block++) {
+    for (
+      let distance = 9, block = 0;
+      distance < road.length - 8;
+      distance += 10, block++
+    ) {
       const point = this.sampleRoad(distance);
       for (const side of [-1, 1]) {
         if (block < 2 && side < 0) continue;
@@ -224,21 +240,55 @@ export class PlayCanvasScene {
         this.world.addChild(group);
 
         const palette = [0xd0b991, 0xc98c73, 0xa4aa95, 0xd8c9aa, 0x829b9e];
-        const shell = this.box("FACADE", palette[(block + (side > 0 ? 2 : 0)) % palette.length], width, height, 4.8);
+        const shell = this.box(
+          "FACADE",
+          palette[(block + (side > 0 ? 2 : 0)) % palette.length],
+          width,
+          height,
+          4.8,
+        );
         shell.setLocalPosition(0, height * 0.5, 0);
         group.addChild(shell);
 
-        const shop = this.box("SHOP_GLASS", 0x41666a, width * 0.74, 2.05, 0.16, 0.42, 0.02);
+        const shop = this.box(
+          "SHOP_GLASS",
+          0x41666a,
+          width * 0.74,
+          2.05,
+          0.16,
+          0.42,
+          0.02,
+        );
         shop.setLocalPosition(0, 1.35, -2.48 * side);
         group.addChild(shop);
-        const sign = this.box("VIETNAMESE_SHOP_SIGN", block % 2 ? 0xd96f47 : 0x3f7471, width * 0.58, 0.55, 0.18);
+        const sign = this.box(
+          "VIETNAMESE_SHOP_SIGN",
+          block % 2 ? 0xd96f47 : 0x3f7471,
+          width * 0.58,
+          0.55,
+          0.18,
+        );
         sign.setLocalPosition(0, 2.95, -2.52 * side);
         group.addChild(sign);
-        const awning = this.box("SHOP_AWNING", block % 3 ? 0xd59b63 : 0x76927d, width * 0.7, 0.12, 0.72);
+        const awning = this.box(
+          "SHOP_AWNING",
+          block % 3 ? 0xd59b63 : 0x76927d,
+          width * 0.7,
+          0.12,
+          0.72,
+        );
         awning.setLocalPosition(0, 2.5, -2.76 * side);
         group.addChild(awning);
         for (let y = 4.35; y < height - 0.8; y += 2.7) {
-          const windows = this.box("FACADE_WINDOWS", 0x78989b, width * 0.56, 0.58, 0.12, 0.5, 0.01);
+          const windows = this.box(
+            "FACADE_WINDOWS",
+            0x78989b,
+            width * 0.56,
+            0.58,
+            0.12,
+            0.5,
+            0.01,
+          );
           windows.setLocalPosition(0, y, -2.47 * side);
           group.addChild(windows);
         }
@@ -260,7 +310,12 @@ export class PlayCanvasScene {
     const hall = this.box("BEN_THANH_HALL", 0xd8c08e, 23, 5.2, 15);
     hall.setLocalPosition(0, 2.6, 0);
     market.addChild(hall);
-    const roof = this.primitive("BEN_THANH_ROOF", "cone", 0xb86e4c, [12.8, 3.4, 8.4]);
+    const roof = this.primitive(
+      "BEN_THANH_ROOF",
+      "cone",
+      0xb86e4c,
+      [12.8, 3.4, 8.4],
+    );
     roof.setLocalPosition(0, 6.2, 0);
     roof.setLocalEulerAngles(0, 45, 0);
     market.addChild(roof);
@@ -268,10 +323,20 @@ export class PlayCanvasScene {
     const tower = this.box("BEN_THANH_CLOCK_TOWER", 0xe0c99a, 5.2, 9.4, 5.2);
     tower.setLocalPosition(0, 7.2, -8.3);
     market.addChild(tower);
-    const towerRoof = this.primitive("BEN_THANH_TOWER_ROOF", "cone", 0xa85d43, [4.2, 3.2, 4.2]);
+    const towerRoof = this.primitive(
+      "BEN_THANH_TOWER_ROOF",
+      "cone",
+      0xa85d43,
+      [4.2, 3.2, 4.2],
+    );
     towerRoof.setLocalPosition(0, 13.45, -8.3);
     market.addChild(towerRoof);
-    const clock = this.primitive("BEN_THANH_CLOCK", "cylinder", 0xf2e6c7, [1.1, 0.12, 1.1]);
+    const clock = this.primitive(
+      "BEN_THANH_CLOCK",
+      "cylinder",
+      0xf2e6c7,
+      [1.1, 0.12, 1.1],
+    );
     clock.setLocalPosition(0, 9.3, -10.94);
     clock.setLocalEulerAngles(90, 0, 0);
     market.addChild(clock);
@@ -290,7 +355,13 @@ export class PlayCanvasScene {
     this.world.addChild(plaza);
 
     for (const side of [-1, 1]) {
-      const row = this.box("NGUYEN_HUE_FRONTAGE", side < 0 ? 0xd1c19f : 0x627b82, 9, 18, 10);
+      const row = this.box(
+        "NGUYEN_HUE_FRONTAGE",
+        side < 0 ? 0xd1c19f : 0x627b82,
+        9,
+        18,
+        10,
+      );
       row.setPosition(
         end.x + end.tx * 14 + end.nx * side * 15,
         9,
@@ -310,32 +381,61 @@ export class PlayCanvasScene {
     const centre = this.box("CITY_HALL_CENTRE", 0xe8d6b4, 7, 12, 8);
     centre.setLocalPosition(0, 6, -0.5);
     cityHall.addChild(centre);
-    const cupola = this.primitive("CITY_HALL_CUPOLA", "cone", 0x7f8b69, [3.2, 4.5, 3.2]);
+    const cupola = this.primitive(
+      "CITY_HALL_CUPOLA",
+      "cone",
+      0x7f8b69,
+      [3.2, 4.5, 3.2],
+    );
     cupola.setLocalPosition(0, 14.1, -0.5);
     cityHall.addChild(cupola);
   }
 
   buildStreetFurniture() {
-    for (let distance = 7, index = 0; distance < REAL_HCM_CORRIDOR.length - 4; distance += 9, index++) {
+    for (
+      let distance = 7, index = 0;
+      distance < REAL_HCM_CORRIDOR.length - 4;
+      distance += 9, index++
+    ) {
       const point = this.sampleRoad(distance);
       const side = index % 2 ? 1 : -1;
       const offset = REAL_HCM_CORRIDOR.shoulderWidth * 0.5 + 1.3;
       const x = point.x + point.nx * offset * side;
       const z = point.z + point.nz * offset * side;
-      const trunk = this.primitive("STREET_TREE_TRUNK", "cylinder", 0x66503e, [0.16, 1.35, 0.16]);
+      const trunk = this.primitive(
+        "STREET_TREE_TRUNK",
+        "cylinder",
+        0x66503e,
+        [0.16, 1.35, 0.16],
+      );
       trunk.setPosition(x, 1.35, z);
       this.world.addChild(trunk);
-      const crown = this.primitive("STREET_TREE_CROWN", "sphere", 0x4d7557, [1.15, 1.45, 1.15]);
+      const crown = this.primitive(
+        "STREET_TREE_CROWN",
+        "sphere",
+        0x4d7557,
+        [1.15, 1.45, 1.15],
+      );
       crown.setPosition(x, 3.65, z);
       this.world.addChild(crown);
       if (index % 2 === 0) {
         const lampSide = -side;
         const lx = point.x + point.nx * offset * lampSide;
         const lz = point.z + point.nz * offset * lampSide;
-        const pole = this.primitive("STREET_LAMP", "cylinder", 0x425656, [0.09, 2.3, 0.09]);
+        const pole = this.primitive(
+          "STREET_LAMP",
+          "cylinder",
+          0x425656,
+          [0.09, 2.3, 0.09],
+        );
         pole.setPosition(lx, 2.3, lz);
         this.world.addChild(pole);
-        const lamp = this.primitive("STREET_LAMP_WARM", "sphere", 0xf2bc70, [0.19, 0.19, 0.19]);
+        const lamp = this.primitive(
+          "STREET_LAMP_WARM",
+          "sphere",
+          0xf2bc70,
+          [0.19, 0.19, 0.19],
+        );
         lamp.setPosition(lx, 4.7, lz);
         this.world.addChild(lamp);
       }
@@ -343,14 +443,23 @@ export class PlayCanvasScene {
   }
 
   sampleRoad(distanceValue) {
-    const distance = Math.max(0, Math.min(REAL_HCM_CORRIDOR.length, distanceValue));
+    const distance = Math.max(
+      0,
+      Math.min(REAL_HCM_CORRIDOR.length, distanceValue),
+    );
     let travelled = 0;
     for (let index = 1; index < REAL_HCM_CORRIDOR.points.length; index++) {
       const a = REAL_HCM_CORRIDOR.points[index - 1];
       const b = REAL_HCM_CORRIDOR.points[index];
       const frame = segmentFrame(a, b);
-      if (travelled + frame.length >= distance || index === REAL_HCM_CORRIDOR.points.length - 1) {
-        const t = Math.max(0, Math.min(1, (distance - travelled) / frame.length));
+      if (
+        travelled + frame.length >= distance ||
+        index === REAL_HCM_CORRIDOR.points.length - 1
+      ) {
+        const t = Math.max(
+          0,
+          Math.min(1, (distance - travelled) / frame.length),
+        );
         return {
           x: a.x + frame.dx * t,
           z: a.z + frame.dz * t,
@@ -376,12 +485,22 @@ export class PlayCanvasScene {
     seat.setLocalPosition(0, 1.08, -0.18);
     root.addChild(seat);
     for (const z of [-0.58, 0.58]) {
-      const wheel = this.primitive(`${name}_WHEEL`, "cylinder", 0x1d2a2a, [0.28, 0.1, 0.28]);
+      const wheel = this.primitive(
+        `${name}_WHEEL`,
+        "cylinder",
+        0x1d2a2a,
+        [0.28, 0.1, 0.28],
+      );
       wheel.setLocalPosition(0, 0.34, z);
       wheel.setLocalEulerAngles(0, 0, 90);
       root.addChild(wheel);
     }
-    const rider = this.primitive(`${name}_RIDER`, "capsule", 0xd6b18b, [0.42, 0.78, 0.42]);
+    const rider = this.primitive(
+      `${name}_RIDER`,
+      "capsule",
+      0xd6b18b,
+      [0.42, 0.78, 0.42],
+    );
     rider.setLocalPosition(0, 1.85, -0.08);
     root.addChild(rider);
     return root;
@@ -389,15 +508,29 @@ export class PlayCanvasScene {
 
   makeVehicle(index) {
     if (index % 4 === 0) {
-      const car = this.box(`TRAFFIC_CAR_${index}`, index % 8 ? 0xb99d79 : 0x6c8588, 1.65, 1.15, 3.15, 0.4, 0.12);
+      const car = this.box(
+        `TRAFFIC_CAR_${index}`,
+        index % 8 ? 0xb99d79 : 0x6c8588,
+        1.65,
+        1.15,
+        3.15,
+        0.4,
+        0.12,
+      );
       return car;
     }
-    return this.makeScooter(`TRAFFIC_BIKE_${index}`, index % 3 ? 0x6f9991 : 0xc7785c);
+    return this.makeScooter(
+      `TRAFFIC_BIKE_${index}`,
+      index % 3 ? 0x6f9991 : 0xc7785c,
+    );
   }
 
   setQuality(value) {
     this.quality = value;
-    this.ratio = value === "low" ? 0.85 : Math.min(devicePixelRatio, value === "high" ? 1.75 : 1.35);
+    this.ratio =
+      value === "low"
+        ? 0.85
+        : Math.min(devicePixelRatio, value === "high" ? 1.75 : 1.35);
     this.resize();
   }
 
@@ -426,7 +559,9 @@ export class PlayCanvasScene {
     this.marker.setPosition(target.x, 0.18, target.z);
     const markerMaterial = this.marker.render?.material;
     if (markerMaterial) {
-      markerMaterial.diffuse = colour(run.missions.phase === "pickup" ? 0xffc668 : 0x85f3c5);
+      markerMaterial.diffuse = colour(
+        run.missions.phase === "pickup" ? 0xffc668 : 0x85f3c5,
+      );
       markerMaterial.update();
     }
 
@@ -443,15 +578,26 @@ export class PlayCanvasScene {
         1.2,
         p.z + Math.cos(p.angle) * lookAhead,
       );
-      if (this.camera.camera) this.camera.camera.fov = this.reducedMotion ? 52 : 54 + speedRatio * 7;
+      if (this.camera.camera)
+        this.camera.camera.fov = this.reducedMotion ? 52 : 54 + speedRatio * 7;
     } else {
-      this.camera.setPosition(this.menuCamera.x, this.menuCamera.y, this.menuCamera.z);
-      this.camera.lookAt(this.menuCamera.tx, this.menuCamera.ty, this.menuCamera.tz);
+      this.camera.setPosition(
+        this.menuCamera.x,
+        this.menuCamera.y,
+        this.menuCamera.z,
+      );
+      this.camera.lookAt(
+        this.menuCamera.tx,
+        this.menuCamera.ty,
+        this.menuCamera.tz,
+      );
     }
 
     this.frameMs = this.frameMs * 0.95 + measuredDt * 1000 * 0.05;
     this.fps = 1000 / Math.max(1, this.frameMs);
-    this.renderer.info.render.calls = this.world.children.length + this.traffic.filter((entity) => entity.enabled).length;
+    this.renderer.info.render.calls =
+      this.world.children.length +
+      this.traffic.filter((entity) => entity.enabled).length;
     this.renderer.info.render.triangles = this.renderer.info.render.calls * 12;
   }
 }

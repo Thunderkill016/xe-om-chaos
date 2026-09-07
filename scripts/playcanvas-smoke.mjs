@@ -3,7 +3,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
 const output = process.env.XEOM_OUTPUT || "output/playcanvas";
-const base = (process.env.XEOM_URL || "http://127.0.0.1:4173").replace(/\/$/, "");
+const base = (process.env.XEOM_URL || "http://127.0.0.1:4173").replace(
+  /\/$/,
+  "",
+);
 await mkdir(output, { recursive: true });
 
 const report = { started: new Date().toISOString(), checks: [], errors: [] };
@@ -19,7 +22,9 @@ const browser = await chromium.launch({
 });
 
 try {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+  });
   const page = await context.newPage();
   page.on("pageerror", (error) => report.errors.push(error.message));
   page.on("console", (message) => {
@@ -29,9 +34,13 @@ try {
   await page.goto(`${base}/?debug=1&seed=2026-09-06&renderer=playcanvas`, {
     waitUntil: "networkidle",
   });
-  await page.waitForFunction(() => window.xeom?.view?.rendererKind === "playcanvas", null, {
-    timeout: 15000,
-  });
+  await page.waitForFunction(
+    () => window.xeom?.view?.rendererKind === "playcanvas",
+    null,
+    {
+      timeout: 15000,
+    },
+  );
 
   const boot = await page.evaluate(() => ({
     renderer: window.xeom.view.rendererKind,
@@ -44,13 +53,19 @@ try {
     fatal: !document.getElementById("fatal").hidden,
   }));
   report.boot = boot;
-  check("PlayCanvas renderer boots as an opt-in engine", boot.renderer === "playcanvas");
+  check(
+    "PlayCanvas renderer boots as an opt-in engine",
+    boot.renderer === "playcanvas",
+  );
   check(
     "PlayCanvas scene uses the Bến Thành → Lê Lợi → Nguyễn Huệ vertical slice",
     boot.slice?.includes("BẾN THÀNH") && boot.source?.includes("OpenStreetMap"),
   );
   check("Bến Thành landmark exists in the PlayCanvas hierarchy", boot.benThanh);
-  check("Nguyễn Huệ / City Hall anchor exists in the PlayCanvas hierarchy", boot.cityHall);
+  check(
+    "Nguyễn Huệ / City Hall anchor exists in the PlayCanvas hierarchy",
+    boot.cityHall,
+  );
   check("PlayCanvas boot exposes no fatal overlay", !boot.fatal);
 
   await page.evaluate(() => {
@@ -73,9 +88,18 @@ try {
     renderer: document.documentElement.dataset.renderer,
   }));
   report.live = live;
-  check("PlayCanvas mode enters the same gameplay simulation", live.playing && live.speed > 0);
-  check("PlayCanvas mode keeps the renderer selection visible to diagnostics", live.renderer === "playcanvas");
-  check("PlayCanvas browser run reports no blocking console errors", report.errors.length === 0);
+  check(
+    "PlayCanvas mode enters the same gameplay simulation",
+    live.playing && live.speed > 0,
+  );
+  check(
+    "PlayCanvas mode keeps the renderer selection visible to diagnostics",
+    live.renderer === "playcanvas",
+  );
+  check(
+    "PlayCanvas browser run reports no blocking console errors",
+    report.errors.length === 0,
+  );
 
   await page.screenshot({ path: `${output}/playcanvas-live.png` });
   await context.close();
