@@ -53,14 +53,14 @@ jobs:
           done
           cat /tmp/xeom-server.log
           exit 1
-      - name: Real browser core-driving smoke
-        env:
-          XEOM_OUTPUT: output/core-driving
-        run: node scripts/core-driving-smoke.mjs
       - name: PlayCanvas renderer smoke
         env:
           XEOM_OUTPUT: output/playcanvas
         run: node scripts/playcanvas-smoke.mjs
+      - name: Real browser core-driving smoke
+        env:
+          XEOM_OUTPUT: output/core-driving
+        run: node scripts/core-driving-smoke.mjs
       - name: Upload browser evidence
         if: always()
         uses: actions/upload-artifact@v4
