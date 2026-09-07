@@ -19,6 +19,7 @@ const MAJOR = new Set([
   "secondary",
   "tertiary",
 ]);
+/** @type {Record<string, number>} */
 const ROAD_COLOUR = {
   motorway: 0x30363a,
   trunk: 0x343a3d,
@@ -36,6 +37,11 @@ const ROAD_COLOUR = {
 };
 const FACADE_LOW = [0xc9b18d, 0xc98870, 0xa4aa91, 0xd3c9ad, 0x879b9d];
 const FACADE_HIGH = [0x526c76, 0x607b82, 0x6d8589, 0x71868c, 0x4b626c];
+
+/** @typedef {[number, number]} OsmPoint */
+/** @typedef {[string, number, OsmPoint[]]} OsmRoad */
+/** @typedef {[string, OsmPoint[]]} OsmWater */
+/** @typedef {[number, number, number, number, number, number, string]} OsmBuilding */
 
 const scaled = (value) => value * GAME_SCALE;
 const radius = (x, z) => Math.hypot(scaled(x), scaled(z));
@@ -85,22 +91,31 @@ export function addRealHcmContext(view) {
   const data = HCMC_OSM_DATA;
   if (!data.buildings.length && !data.roads.length) return null;
 
+  /** @type {OsmWater[]} */
+  const waterFeatures = data.water;
+  /** @type {OsmPoint[][]} */
+  const greenFeatures = data.green;
+  /** @type {OsmRoad[]} */
+  const roads = data.roads;
+  /** @type {OsmBuilding[]} */
+  const buildings = data.buildings;
+
   const solid = new THREE.Group();
   solid.name = "HCMC_REAL_OSM_SOURCE";
   const quality = view.quality === "low" ? "low" : "high";
   const buildingLimit =
     quality === "low" ? MAX_BUILDINGS_LOW : MAX_BUILDINGS_HIGH;
 
-  for (const feature of data.green)
+  for (const feature of greenFeatures)
     areaBox(view, solid, feature, 0x4b7157, 0.02);
-  for (const [kind, points] of data.water) {
+  for (const [kind, points] of waterFeatures) {
     if (kind === "area") areaBox(view, solid, points, 0x397c86, -0.02);
     else
       for (let i = 1; i < points.length; i++)
         roadRibbon(view, solid, points[i - 1], points[i], 13, 0x397c86);
   }
 
-  for (const [type, width, points] of data.roads) {
+  for (const [type, width, points] of roads) {
     const major = MAJOR.has(type);
     const colour = ROAD_COLOUR[type] ?? ROAD_COLOUR.unclassified;
     for (let i = 1; i < points.length; i++) {
@@ -114,8 +129,8 @@ export function addRealHcmContext(view) {
   }
 
   let made = 0;
-  for (let i = 0; i < data.buildings.length && made < buildingLimit; i++) {
-    const [mx, mz, mw, md, mh, angle, kind] = data.buildings[i];
+  for (let i = 0; i < buildings.length && made < buildingLimit; i++) {
+    const [mx, mz, mw, md, mh, angle, kind] = buildings[i];
     const x = scaled(mx);
     const z = scaled(mz);
     if (Math.hypot(x, z) < CORE_RESERVE) continue;
@@ -153,7 +168,7 @@ export function addRealHcmContext(view) {
   view.realHcmStats = {
     generatedAt: data.generatedAt,
     buildings: made,
-    roads: data.roads.length,
+    roads: roads.length,
     bounds: data.bounds,
   };
   return batch;
