@@ -44,25 +44,46 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
 
   if (run.player.recovery > 0) {
     stage = "recovery";
-    hint = text("BÌNH TĨNH · LẤY LẠI TAY LÁI", "EASY · GET THE BIKE BACK UNDER YOU");
+    hint = text(
+      "BÌNH TĨNH · LẤY LẠI TAY LÁI",
+      "EASY · GET THE BIKE BACK UNDER YOU",
+    );
   } else if (inside && slowEnough) {
     stage = "boarding";
     hint = pickup
-      ? text("GIỮ PHANH · ĐỢI KHÁCH LÊN XE", "HOLD THE BRAKE · PASSENGER'S GETTING ON")
-      : text("GIỮ PHANH · ĐỢI KHÁCH XUỐNG XE", "HOLD THE BRAKE · PASSENGER'S GETTING OFF");
+      ? text(
+          "GIỮ PHANH · ĐỢI KHÁCH LÊN XE",
+          "HOLD THE BRAKE · PASSENGER'S GETTING ON",
+        )
+      : text(
+          "GIỮ PHANH · ĐỢI KHÁCH XUỐNG XE",
+          "HOLD THE BRAKE · PASSENGER'S GETTING OFF",
+        );
   } else if (targetDistance < APPROACH_DISTANCE) {
     stage = "brake";
     hint = pickup
-      ? text("↓ CHẬM LẠI · DỪNG TRONG VÒNG VÀNG", "↓ SLOW DOWN · STOP IN THE YELLOW RING")
-      : text("↓ CHẬM LẠI · DỪNG TRONG VÒNG XANH", "↓ SLOW DOWN · STOP IN THE GREEN RING");
+      ? text(
+          "↓ CHẬM LẠI · DỪNG TRONG VÒNG VÀNG",
+          "↓ SLOW DOWN · STOP IN THE YELLOW RING",
+        )
+      : text(
+          "↓ CHẬM LẠI · DỪNG TRONG VÒNG XANH",
+          "↓ SLOW DOWN · STOP IN THE GREEN RING",
+        );
   } else if (run.stats.distance < FIRST_MOVEMENT_DISTANCE) {
     stage = "depart";
     hint = touch
       ? text("GIỮ NÚT GA ↑ · CHẠM ←/→ ĐỂ RẼ", "HOLD GO ↑ · TOUCH ←/→ TO STEER")
-      : text("GIỮ W / ↑ ĐỂ LÊN GA · A/D ĐỂ RẼ · S ĐỂ PHANH", "HOLD W / ↑ TO GO · A/D TO STEER · S TO BRAKE");
+      : text(
+          "GIỮ W / ↑ ĐỂ LÊN GA · A/D ĐỂ RẼ · S ĐỂ PHANH",
+          "HOLD W / ↑ TO GO · A/D TO STEER · S TO BRAKE",
+        );
   } else if (overdue) {
     stage = "overdue";
-    hint = text("TRỄ RỒI · CỨ ĐƯA KHÁCH TỚI NƠI", "YOU'RE LATE · YOU CAN STILL DROP OFF");
+    hint = text(
+      "TRỄ RỒI · CỨ ĐƯA KHÁCH TỚI NƠI",
+      "YOU'RE LATE · YOU CAN STILL DROP OFF",
+    );
   }
 
   const preference = PASSENGER_PREFERENCES[mission.passenger.id];
@@ -177,8 +198,10 @@ export class UI {
     else if (event.type === "thread")
       text = this.t("LÁCH KÉP! +BỨT TỐC", "THREAD THE GAP! +BOOST");
     else if (event.type === "pothole") text = this.t("ỐI!", "BUMP!");
-    else if (event.text.includes("LÁCH ĐẸP")) text = this.t("LÁCH NGỌT!", "CLEAN PASS!");
-    else if (event.text.includes("HẺM MASTER")) text = this.t("RÀNH HẺM!", "ALLEY ACE!");
+    else if (event.text.includes("LÁCH ĐẸP"))
+      text = this.t("LÁCH NGỌT!", "CLEAN PASS!");
+    else if (event.text.includes("HẺM MASTER"))
+      text = this.t("RÀNH HẺM!", "ALLEY ACE!");
     else if (event.text.includes("MƯỢT")) text = this.t("MƯỢT!", "SMOOTH!");
     el("reaction").textContent = text + suffix;
     el("reaction").dataset.event = event.type;
@@ -208,7 +231,9 @@ export class UI {
     el("mission-card").dataset.phase = m.phase;
     el("mission-phase").textContent = guidance.phase;
     el("destination").textContent =
-      this.language === "en" ? EN_STOPS[m.target.name] || m.target.name : m.target.name;
+      this.language === "en"
+        ? EN_STOPS[m.target.name] || m.target.name
+        : m.target.name;
     el("mission-detail").textContent =
       this.t(m.passenger.vi, m.passenger.en) +
       " · " +
@@ -224,7 +249,9 @@ export class UI {
       "rotate(" + -angleDelta(angle, p.angle) + "rad)";
     const districtName = district(p.x, p.z);
     el("district").textContent =
-      this.language === "en" ? EN_DISTRICTS[districtName] || districtName : districtName;
+      this.language === "en"
+        ? EN_DISTRICTS[districtName] || districtName
+        : districtName;
     el("chaos").textContent =
       this.language === "en"
         ? CHAOS.find((e) => e.vi === run.eventName)?.en || ""

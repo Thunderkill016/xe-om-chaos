@@ -62,7 +62,11 @@ export function resultCard(result, language = "vi") {
   c.setLineDash([]);
   c.font = "bold 31px Arial";
   c.fillStyle = "#f5edda";
-  c.fillText(en ? "SHIFT OVER. STORY WORTH TELLING." : "HẾT CA. CÓ CHUYỆN ĐỂ KỂ.", 73, 282);
+  c.fillText(
+    en ? "SHIFT OVER. STORY WORTH TELLING." : "HẾT CA. CÓ CHUYỆN ĐỂ KỂ.",
+    73,
+    282,
+  );
   c.fillStyle = "#b1efc8";
   c.font = "italic 900 66px Arial";
   c.fillText(cardTitle(result, language), 65, 387, 950);
@@ -109,7 +113,9 @@ export function resultCard(result, language = "vi") {
   c.font = "18px Arial";
   c.fillStyle = "#acc3b5";
   c.fillText(
-    en ? "LOCAL SCORE · SAME CITY. YOUR ROUTE." : "ĐIỂM TRÊN MÁY · CÙNG THÀNH PHỐ. TỰ CHỌN ĐƯỜNG.",
+    en
+      ? "LOCAL SCORE · SAME CITY. YOUR ROUTE."
+      : "ĐIỂM TRÊN MÁY · CÙNG THÀNH PHỐ. TỰ CHỌN ĐƯỜNG.",
     74,
     1293,
   );
@@ -155,10 +161,14 @@ export function bindShare(getRun, ui) {
     if (navigator.share) {
       try {
         await navigator.share({ title: "Xe Ôm Chaos: Saigon", text, url });
-        el("share-status").textContent = ui.t("Đã mở bảng chia sẻ.", "Share sheet opened.");
+        el("share-status").textContent = ui.t(
+          "Đã mở bảng chia sẻ.",
+          "Share sheet opened.",
+        );
         return;
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
       }
     }
     try {

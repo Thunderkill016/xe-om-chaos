@@ -47,7 +47,9 @@
         </div>
         <h1>XE ÔM<br /><span>CHAOS.</span></h1>
         <div class="city-stamp"><span>↗</span> SÀI GÒN</div>
-        <p class="tagline">Bạn biết đường tắt.<br />Khách thì chưa chắc dám tin.</p>
+        <p class="tagline">
+          Bạn biết đường tắt.<br />Khách thì chưa chắc dám tin.
+        </p>
         <div class="start-actions">
           <button id="start" class="primary">LÊN XE THÔI ↗</button
           ><span>3 PHÚT · MỖI NGÀY MỘT CUỐC MỚI</span>
@@ -67,7 +69,9 @@
       <section id="hud" hidden>
         <div class="run-strip">
           <div><small>HẾT CA TRONG</small><strong id="timer">3:00</strong></div>
-          <div class="score-block"><small>ĐIỂM</small><strong id="score">0</strong></div>
+          <div class="score-block">
+            <small>ĐIỂM</small><strong id="score">0</strong>
+          </div>
           <div><small>TIỀN CƯỚC</small><strong id="fare">0 ₫</strong></div>
         </div>
         <div class="mission-stack">
@@ -77,10 +81,18 @@
               <small id="mission-phase"></small
               ><strong id="destination"></strong
               ><span id="mission-detail"></span
-              ><span id="passenger-preference" class="passenger-preference"></span>
+              ><span
+                id="passenger-preference"
+                class="passenger-preference"
+              ></span>
             </div>
             <b id="direction">↑</b>
-            <progress id="boarding-progress" max="1" value="0" hidden></progress>
+            <progress
+              id="boarding-progress"
+              max="1"
+              value="0"
+              hidden
+            ></progress>
           </div>
           <div id="chaos" class="chaos" role="status"></div>
         </div>
@@ -110,10 +122,15 @@
             ><button data-input="right" aria-label="Rẽ phải">▶</button>
           </div>
           <div class="pedals">
-            <button data-input="horn" aria-label="Bóp còi" class="horn">BÍP!</button
-            ><button data-input="boost" aria-label="Bứt tốc" class="boost">ϟ</button
-            ><button data-input="brake" aria-label="Phanh" class="brake">■</button
-            ><button data-input="throttle" aria-label="Giữ ga" class="gas">GA ↑</button>
+            <button data-input="horn" aria-label="Bóp còi" class="horn">
+              BÍP!</button
+            ><button data-input="boost" aria-label="Bứt tốc" class="boost">
+              ϟ</button
+            ><button data-input="brake" aria-label="Phanh" class="brake">
+              ■</button
+            ><button data-input="throttle" aria-label="Giữ ga" class="gas">
+              GA ↑
+            </button>
           </div>
         </div>
       </section>
@@ -144,7 +161,12 @@
           /></label>
           <label
             ><span>Cỡ nút cảm ứng</span
-            ><input id="touch-scale" type="range" min="85" max="115" value="100"
+            ><input
+              id="touch-scale"
+              type="range"
+              min="85"
+              max="115"
+              value="100"
           /></label>
           <button class="primary">XONG RỒI</button>
         </form>
