@@ -20,20 +20,21 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
-      - name: Canonicalize HCMC visual files
+      - name: Canonicalize PlayCanvas migration
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           git fetch origin "$GITHUB_HEAD_REF"
           git checkout -B "$GITHUB_HEAD_REF" "origin/$GITHUB_HEAD_REF"
-          npx prettier --write src/view/HcmCorridorView.js src/view/OsmContext.js
+          npm install --package-lock-only --ignore-scripts
+          npx prettier --write package.json package-lock.json src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/view/HcmCorridorView.js src/view/OsmContext.js
-            git commit -m "Format HCMC visual pass"
+            git add package.json package-lock.json src/view/PlayCanvasScene.js src/main.js scripts/playcanvas-smoke.mjs scripts/package.mjs index.html src/view/HcmCorridorView.js src/view/OsmContext.js
+            git commit -m "Canonicalize PlayCanvas migration"
             git push origin "HEAD:$GITHUB_HEAD_REF"
           fi
+      - run: npm ci
       - name: Verify committed HCMC context exists
         run: |
           test -s src/world/hcm-downtown-data.js
@@ -73,10 +74,16 @@ jobs:
         env:
           XEOM_OUTPUT: output/core-driving
         run: node scripts/core-driving-smoke.mjs
+      - name: PlayCanvas renderer smoke
+        env:
+          XEOM_OUTPUT: output/playcanvas
+        run: node scripts/playcanvas-smoke.mjs
       - name: Upload browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: core-driving-browser-smoke
-          path: output/core-driving
+          name: browser-smoke
+          path: |
+            output/core-driving
+            output/playcanvas
           if-no-files-found: error
