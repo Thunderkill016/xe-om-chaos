@@ -1,0 +1,161 @@
+import assert from "node:assert/strict";
+import { mkdir, writeFile } from "node:fs/promises";
+import { chromium } from "playwright";
+import { Run } from "../src/game/Run.js";
+import { openingRoutes } from "./evaluate-routes.mjs";
+
+const output = process.env.XEOM_OUTPUT || "output/core-driving";
+const base = (process.env.XEOM_URL || "http://127.0.0.1:4173").replace(/\/$/, "");
+await mkdir(output, { recursive: true });
+
+const report = {
+  started: new Date().toISOString(),
+  base,
+  checks: [],
+  errors: [],
+};
+
+function check(name, value) {
+  assert.ok(value, name);
+  report.checks.push(name);
+  console.log("PASS", name);
+}
+
+const browser = await chromium.launch({
+  headless: true,
+  args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
+});
+
+try {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await context.newPage();
+  page.on("pageerror", (error) => report.errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") report.errors.push(message.text());
+  });
+
+  await page.goto(`${base}/?debug=1&seed=2026-09-06`, { waitUntil: "networkidle" });
+  await page.waitForFunction(() => Boolean(window.xeom?.view));
+  report.version = await page.evaluate(() => window.xeom.run.record.version);
+  await page.evaluate(() => {
+    document.getElementById("debug").hidden = true;
+  });
+  await page.screenshot({ path: `${output}/menu.png` });
+
+  await page.getByRole("button", { name: "LÊN XE THÔI ↗" }).click();
+  check(
+    "start enters live gameplay",
+    (await page.locator("#timer").isVisible()) &&
+      (await page.evaluate(() => window.xeom.state.playing)),
+  );
+
+  await page.keyboard.down("w");
+  await page.waitForFunction(() => window.xeom.run.player.speed > 5);
+  check("throttle accelerates motorcycle", true);
+
+  await page.keyboard.down("a");
+  await page.waitForFunction(() => Math.abs(window.xeom.run.player.lean) > 0.03);
+  check("steering produces visible bike lean", true);
+  await page.keyboard.up("a");
+  await page.keyboard.up("w");
+
+  await page.keyboard.down("s");
+  await page.waitForFunction(() => window.xeom.run.player.speed === 0);
+  await page.keyboard.up("s");
+  check("brake stops motorcycle", true);
+
+  await page.locator("#pause").click();
+  await page.locator("#restart-pause").click();
+  check(
+    "restart resets crash and score state",
+    await page.evaluate(
+      () => window.xeom.run.stats.crashes === 0 && window.xeom.run.stats.score === 0,
+    ),
+  );
+
+  const route = openingRoutes(new Run("2026-09-06")).hem26;
+  let waypoint = 0;
+  const held = new Set();
+  const routeStart = Date.now();
+
+  while (Date.now() - routeStart < 80000) {
+    const state = await page.evaluate(() => ({
+      p: window.xeom.run.player,
+      phase: window.xeom.run.missions.phase,
+      deliveries: window.xeom.run.stats.deliveries,
+    }));
+    if (state.deliveries > 0) break;
+    if (waypoint >= route.length) break;
+
+    const target = route[waypoint];
+    const p = state.p;
+    const distance = Math.hypot(target.x - p.x, target.z - p.z);
+    const targetAngle = Math.atan2(target.x - p.x, target.z - p.z) - p.angle;
+    const delta = Math.atan2(Math.sin(targetAngle), Math.cos(targetAngle));
+
+    if ((!target.stop && distance < 3) || (waypoint === 0 && state.phase === "dropoff")) {
+      waypoint += 1;
+      continue;
+    }
+
+    const wantedSpeed =
+      target.stop && distance < 4
+        ? 0
+        : Math.abs(delta) > 0.5
+          ? 0
+          : distance < 8
+            ? 4
+            : 8;
+
+    const desired = new Set([
+      ...(p.speed < wantedSpeed ? ["w"] : []),
+      ...(p.speed > wantedSpeed ? ["s"] : []),
+      ...(delta > 0.1 ? ["a"] : []),
+      ...(delta < -0.1 ? ["d"] : []),
+    ]);
+
+    for (const key of [...held]) {
+      if (!desired.has(key)) {
+        await page.keyboard.up(key);
+        held.delete(key);
+      }
+    }
+    for (const key of desired) {
+      if (!held.has(key)) {
+        await page.keyboard.down(key);
+        held.add(key);
+      }
+    }
+    await page.waitForTimeout(80);
+  }
+
+  for (const key of held) await page.keyboard.up(key);
+
+  const outcome = await page.evaluate(() => ({
+    deliveries: window.xeom.run.stats.deliveries,
+    crashes: window.xeom.run.stats.crashes,
+    alleys: window.xeom.run.stats.alleys,
+    discoveredHem26: window.xeom.run.discoveredLanes.has("hem26"),
+    time: window.xeom.run.time,
+    player: {
+      x: window.xeom.run.player.x,
+      z: window.xeom.run.player.z,
+      speed: window.xeom.run.player.speed,
+    },
+  }));
+  report.route = outcome;
+
+  check("Hẻm 26 is discovered through real browser steering", outcome.discoveredHem26);
+  check("pickup and dropoff complete through real browser controls", outcome.deliveries > 0);
+  check("browser reports no blocking console errors", report.errors.length === 0);
+
+  await page.screenshot({ path: `${output}/after-route.png` });
+  await context.close();
+} catch (error) {
+  report.failure = String(error);
+  throw error;
+} finally {
+  report.finished = new Date().toISOString();
+  await writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
+  await browser.close();
+}
