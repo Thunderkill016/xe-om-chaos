@@ -6,6 +6,11 @@ import {
   trafficPose as mapTrafficPose,
 } from "./map.js";
 
+/** @typedef {[number, number]} OsmPoint */
+/** @typedef {[string, number, OsmPoint[]]} OsmRoad */
+/** @typedef {[number, number, number, number, number, number, string]} OsmBuilding */
+/** @typedef {{x:number,z:number,w:number,d:number,h:number,angle:number,kind:string}} CorridorBuilding */
+
 const ANCHOR = Object.freeze({ x: 0, z: 72 });
 const PLAY_SCALE = 0.34;
 const TARGET_SOURCE_LENGTH = 235;
@@ -197,7 +202,9 @@ function candidateScore(chain, transformed) {
 }
 
 function selectCorridor() {
-  const roads = HCMC_OSM_DATA.roads.filter(
+  /** @type {OsmRoad[]} */
+  const osmRoads = /** @type {OsmRoad[]} */ (HCMC_OSM_DATA.roads);
+  const roads = osmRoads.filter(
     (road) =>
       DRIVABLE_TYPES.has(road[0]) &&
       road[2]?.length >= 2 &&
@@ -323,8 +330,11 @@ function buildCorridorBuildings() {
       REAL_HCM_CORRIDOR.sourceOrigin[1] + dx * s + dz * c,
     ];
   });
+  /** @type {CorridorBuilding[]} */
   const buildings = [];
-  for (const source of HCMC_OSM_DATA.buildings) {
+  /** @type {OsmBuilding[]} */
+  const osmBuildings = /** @type {OsmBuilding[]} */ (HCMC_OSM_DATA.buildings);
+  for (const source of osmBuildings) {
     const [sx, sz, sw, sd, sh, sourceAngle, kind] = source;
     const sourceDistance = distanceToPolyline([sx, sz], sourcePoints);
     if (sourceDistance > 58) continue;
@@ -429,6 +439,7 @@ export function makeWorldTraffic(rng, regularCount, rushCount = 0) {
   const corridorCount = Math.min(4, regularCount);
   const first = regularCount - corridorCount;
   for (let id = first; id < regularCount; id++) {
+    /** @type {any} */
     const vehicle = traffic[id];
     const slot = id - first;
     vehicle.route = REAL_HCM_CORRIDOR.id;
@@ -445,6 +456,10 @@ export function makeWorldTraffic(rng, regularCount, rushCount = 0) {
   return traffic;
 }
 
+/**
+ * @param {any} vehicle
+ * @param {number} time
+ */
 export function worldTrafficPose(vehicle, time) {
   if (vehicle.route !== REAL_HCM_CORRIDOR.id) {
     mapTrafficPose(vehicle, time);
