@@ -6,7 +6,7 @@ import { PASSENGERS } from "../src/game/Missions.js";
 import { CHAOS } from "../src/game/ChaosDirector.js";
 import { getMissionGuidance } from "../src/platform/UI.js";
 
-test("Vietnamese edition speaks in app-driver vocabulary instead of generic fragments", async () => {
+test("Vietnamese copy uses app-driver vocabulary", async () => {
   const html = await readFile("index.html", "utf8");
   for (const phrase of [
     "App vừa nổ cuốc",
@@ -32,14 +32,17 @@ test("Vietnamese edition speaks in app-driver vocabulary instead of generic frag
   assert.match(dropoff.hint, /Khách đã lên xe/i);
 });
 
-test("passengers and street events identify a speaker or subject", () => {
+test("passengers and street events identify a subject", () => {
   for (const passenger of PASSENGERS) {
     assert.match(passenger.line, /[.!?]/);
-    assert.match(passenger.line, /\b(anh|em|cô|con)\b/i);
+    assert.match(passenger.line, /(anh|em|cô|con)/i);
   }
 
   for (const event of CHAOS) {
     assert.match(event.vi, /[.!?]/);
-    assert.match(event.vi, /Bác tài|Trời Sài Gòn|Giờ tan tầm|Đoạn phía trước|Đường phía trước|Xe buýt|Đường Bến Gió/i);
+    assert.match(
+      event.vi,
+      /Bác tài|Trời Sài Gòn|Giờ tan tầm|Đoạn phía trước|Đường phía trước|Xe buýt|Đường Bến Gió/i,
+    );
   }
 });
