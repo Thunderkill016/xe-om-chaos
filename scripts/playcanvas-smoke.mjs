@@ -111,7 +111,9 @@ try {
   );
   check(
     "PlayCanvas keeps the authored map mounted while the player moves",
-    live.baseMap && Number.isFinite(live.player.x) && Number.isFinite(live.player.z),
+    live.baseMap &&
+      Number.isFinite(live.player.x) &&
+      Number.isFinite(live.player.z),
   );
   check(
     "PlayCanvas mode keeps the renderer selection visible to diagnostics",
