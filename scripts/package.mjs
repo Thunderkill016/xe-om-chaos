@@ -14,6 +14,10 @@ async function packageHtml(source, destination, prefix) {
     .replace(
       `${prefix}node_modules/three/examples/jsm/`,
       `${prefix}vendor/addons/`,
+    )
+    .replace(
+      `${prefix}node_modules/playcanvas/build/playcanvas.mjs`,
+      `${prefix}vendor/playcanvas.mjs`,
     );
   await mkdir(path.dirname(destination), { recursive: true });
   await writeFile(destination, html);
@@ -38,6 +42,19 @@ await cp(
   "node_modules/three/LICENSE",
   path.join(target, "vendor/THREE-LICENSE.txt"),
 );
+await cp(
+  "node_modules/playcanvas/build/playcanvas.mjs",
+  path.join(target, "vendor/playcanvas.mjs"),
+);
+await cp(
+  "node_modules/playcanvas/build/playcanvas",
+  path.join(target, "vendor/playcanvas"),
+  { recursive: true },
+);
+await cp(
+  "node_modules/playcanvas/LICENSE",
+  path.join(target, "vendor/PLAYCANVAS-LICENSE.txt"),
+);
 console.log(
-  "Static site ready in dist/ with Vietnamese and international editions; no runtime CDN or Node dependency.",
+  "Static site ready in dist/ with Vietnamese and international editions plus vendored Three.js and PlayCanvas; no runtime CDN or Node dependency.",
 );
