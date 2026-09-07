@@ -16,6 +16,7 @@ const PLAY_SCALE = 0.34;
 const TARGET_SOURCE_LENGTH = 235;
 const MAX_CHAIN_ROADS = 8;
 const ENDPOINT_EPSILON = 2.2;
+export const REAL_HCM_BUILDING_CLEARANCE = 1.8;
 const DRIVABLE_TYPES = new Set([
   "motorway",
   "trunk",
@@ -71,6 +72,48 @@ function distanceToPolyline(point, points) {
   for (let i = 1; i < points.length; i++)
     best = Math.min(best, distanceToSegment(point, points[i - 1], points[i]));
   return best;
+}
+
+function cross(a, b, c) {
+  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+}
+
+function pointOnSegment(point, a, b) {
+  return (
+    Math.abs(cross(a, b, point)) < 1e-7 &&
+    point[0] >= Math.min(a[0], b[0]) - 1e-7 &&
+    point[0] <= Math.max(a[0], b[0]) + 1e-7 &&
+    point[1] >= Math.min(a[1], b[1]) - 1e-7 &&
+    point[1] <= Math.max(a[1], b[1]) + 1e-7
+  );
+}
+
+function segmentsIntersect(a, b, c, d) {
+  const abC = cross(a, b, c);
+  const abD = cross(a, b, d);
+  const cdA = cross(c, d, a);
+  const cdB = cross(c, d, b);
+  if (
+    ((abC > 0 && abD < 0) || (abC < 0 && abD > 0)) &&
+    ((cdA > 0 && cdB < 0) || (cdA < 0 && cdB > 0))
+  )
+    return true;
+  return (
+    pointOnSegment(c, a, b) ||
+    pointOnSegment(d, a, b) ||
+    pointOnSegment(a, c, d) ||
+    pointOnSegment(b, c, d)
+  );
+}
+
+function segmentToSegmentDistance(a, b, c, d) {
+  if (segmentsIntersect(a, b, c, d)) return 0;
+  return Math.min(
+    distanceToSegment(a, c, d),
+    distanceToSegment(b, c, d),
+    distanceToSegment(c, a, b),
+    distanceToSegment(d, a, b),
+  );
 }
 
 function tangent(points, atEnd = false) {
@@ -319,6 +362,41 @@ function transformSourcePoint(x, z) {
   };
 }
 
+function corridorBuildingCorners(building) {
+  const halfW = building.w * 0.5;
+  const halfD = building.d * 0.5;
+  const c = Math.cos(building.angle);
+  const s = Math.sin(building.angle);
+  return [
+    [-halfW, -halfD],
+    [halfW, -halfD],
+    [halfW, halfD],
+    [-halfW, halfD],
+  ].map(([localX, localZ]) => [
+    building.x + localX * c + localZ * s,
+    building.z - localX * s + localZ * c,
+  ]);
+}
+
+export function realCorridorBuildingClearance(building) {
+  const corners = corridorBuildingCorners(building);
+  let best = Infinity;
+  for (let edge = 0; edge < corners.length; edge++) {
+    const a = corners[edge];
+    const b = corners[(edge + 1) % corners.length];
+    for (let i = 1; i < REAL_HCM_CORRIDOR.points.length; i++) {
+      const c = REAL_HCM_CORRIDOR.points[i - 1];
+      const d = REAL_HCM_CORRIDOR.points[i];
+      best = Math.min(
+        best,
+        segmentToSegmentDistance(a, b, [c.x, c.z], [d.x, d.z]),
+      );
+      if (best === 0) return 0;
+    }
+  }
+  return best;
+}
+
 function buildCorridorBuildings() {
   const sourcePoints = REAL_HCM_CORRIDOR.points.map((point) => {
     const dx = (point.x - ANCHOR.x) / PLAY_SCALE;
@@ -334,6 +412,8 @@ function buildCorridorBuildings() {
   const buildings = [];
   /** @type {OsmBuilding[]} */
   const osmBuildings = /** @type {OsmBuilding[]} */ (HCMC_OSM_DATA.buildings);
+  const requiredClearance =
+    REAL_HCM_CORRIDOR.shoulderWidth * 0.5 + REAL_HCM_BUILDING_CLEARANCE;
   for (const source of osmBuildings) {
     const [sx, sz, sw, sd, sh, sourceAngle, kind] = source;
     const sourceDistance = distanceToPolyline([sx, sz], sourcePoints);
@@ -346,24 +426,17 @@ function buildCorridorBuildings() {
       Math.abs(position.x - ANCHOR.x) > 56
     )
       continue;
-    const w = clamp(sw * PLAY_SCALE, 2.4, 22);
-    const d = clamp(sd * PLAY_SCALE, 2.4, 22);
-    const h = clamp(sh * 0.22, 3, 30);
-    const roadDistance = distanceToPolyline(
-      [position.x, position.z],
-      REAL_HCM_CORRIDOR.points.map((point) => [point.x, point.z]),
-    );
-    if (roadDistance < REAL_HCM_CORRIDOR.width * 0.5 + Math.min(w, d) * 0.32)
-      continue;
-    buildings.push({
+    const building = {
       x: position.x,
       z: position.z,
-      w,
-      d,
-      h,
+      w: clamp(sw * PLAY_SCALE, 2.4, 22),
+      d: clamp(sd * PLAY_SCALE, 2.4, 22),
+      h: clamp(sh * 0.22, 3, 30),
       angle: sourceAngle - REAL_HCM_CORRIDOR.sourceHeading,
       kind,
-    });
+    };
+    if (realCorridorBuildingClearance(building) < requiredClearance) continue;
+    buildings.push(building);
     if (buildings.length >= 84) break;
   }
   return buildings;
