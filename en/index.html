@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#162c2d" />
     <meta
       name="description"
-      content="Ride through Saigon traffic, cut through alleys, and get your passenger there before the shift ends."
+      content="Take one xe ôm run through Saigon: dodge rush hour, slip through hẻm, and get your passenger there in one piece."
     />
     <title>XE ÔM CHAOS · SAIGON</title>
     <link
@@ -43,18 +43,16 @@
     <main>
       <section id="welcome" class="welcome">
         <div class="edition">
-          <span class="live-dot"></span> SAIGON TRAFFIC. TIGHT ALLEYS. GET THERE
-          ANYWAY.
+          <span class="live-dot"></span> Rush hour in Saigon. Your passenger is already waiting.
         </div>
         <h1>XE ÔM<br /><span>CHAOS.</span></h1>
         <div class="city-stamp"><span>↗</span> SAIGON</div>
         <p class="tagline">
-          You know the shortcuts.<br />Your passenger is trying not to look
-          nervous.
+          Main road jammed?<br />There's probably a hẻm that still moves.
         </p>
         <div class="start-actions">
           <button id="start" class="primary">LET'S RIDE ↗</button
-          ><span>3 MINUTES · A NEW RUN EVERY DAY</span>
+          ><span>3-minute shift · a different run every day</span>
         </div>
         <div class="quick-controls">
           <span><kbd>W A S D</kbd> <span>Ride</span></span
@@ -65,14 +63,12 @@
       </section>
       <div id="postcard" class="postcard">
         <span>10°46′ N · 106°41′ E</span
-        ><strong>BUSY STREETS.<br />GOOD STORIES.</strong
-        ><small>KNOW THE CITY. MAKE YOUR MOVE.</small>
+        ><strong>SAIGON WEATHER:<br />SUN. RAIN. REPEAT.</strong
+        ><small>THE PASSENGER IS STILL IN A HURRY.</small>
       </div>
       <section id="hud" hidden>
         <div class="run-strip">
-          <div>
-            <small>SHIFT ENDS IN</small><strong id="timer">3:00</strong>
-          </div>
+          <div><small>TIME LEFT</small><strong id="timer">3:00</strong></div>
           <div class="score-block">
             <small>SCORE</small><strong id="score">0</strong>
           </div>
@@ -101,7 +97,7 @@
           <div id="chaos" class="chaos" role="status"></div>
         </div>
         <div class="flow-panel">
-          <span>FLOW</span><strong id="combo">×1</strong>
+          <span>RHYTHM</span><strong id="combo">×1</strong>
           <div class="flow-track"><i id="flow-meter"></i></div>
         </div>
         <div id="reaction" class="reaction" role="status"></div>
@@ -141,7 +137,7 @@
       <dialog id="settings">
         <form method="dialog">
           <div class="dialog-heading">
-            <h2>TUNE YOUR RIDE</h2>
+            <h2>RIDE SETTINGS</h2>
             <button aria-label="Close settings">✕</button>
           </div>
           <label
@@ -176,13 +172,13 @@
         </form>
       </dialog>
       <dialog id="pause-dialog">
-        <h2>TAKE A BREAK.</h2>
-        <button id="resume" class="primary">KEEP RIDING ↗</button
-        ><button id="restart-pause" class="secondary">Restart run</button>
+        <h2>PAUSED</h2>
+        <button id="resume" class="primary">BACK ON THE ROAD ↗</button
+        ><button id="restart-pause" class="secondary">Restart this run</button>
       </dialog>
       <dialog id="results">
         <div class="result-head">XE ÔM CHAOS <span>SAIGON</span></div>
-        <p class="eyebrow">SHIFT OVER. STORY WORTH TELLING.</p>
+        <p class="eyebrow">Shift's over. Let's see how that went.</p>
         <h2 id="result-title"></h2>
         <div class="result-score" id="result-score"></div>
         <p id="best-message"></p>
@@ -190,9 +186,9 @@
         <p class="challenge-code" id="challenge-code"></p>
         <button id="again" class="primary">ONE MORE RUN ↗</button>
         <div class="result-buttons">
-          <button id="share">Challenge a friend</button
-          ><button id="save-card">Save result card</button
-          ><button id="save-replay">Save run data</button>
+          <button id="share">Send to a friend</button
+          ><button id="save-card">Save image</button
+          ><button id="save-replay">Save run</button>
         </div>
         <p id="share-status" role="status"></p>
       </dialog>
@@ -200,7 +196,7 @@
       <pre id="debug" hidden></pre>
     </main>
     <footer id="footer">
-      <span>SAME CITY. EVERY RIDE HAS A STORY.</span
+      <span>SAIGON'S STILL MOVING. SO ARE YOU.</span
       ><span>INTERNATIONAL PLAYTEST · 01</span>
     </footer>
     <script type="module" src="../src/main.js"></script>
