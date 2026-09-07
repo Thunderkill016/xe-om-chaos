@@ -19,6 +19,7 @@
     "package": "node scripts/package.mjs"
   },
   "dependencies": {
+    "playcanvas": "2.22.0",
     "three": "0.180.0"
   },
   "devDependencies": {
