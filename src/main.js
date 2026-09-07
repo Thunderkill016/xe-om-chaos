@@ -32,20 +32,27 @@ let playing = false,
   previous = performance.now();
 let menuTime = 0;
 try {
-  const finishLegacyCarve = installLegacyCorridorCarve(Scene);
-  try {
-    view = new Scene(el("game"));
-  } finally {
-    if (view) finishLegacyCarve(view);
+  if (params.get("renderer") === "playcanvas") {
+    const { PlayCanvasScene } = await import("./view/PlayCanvasScene.js");
+    view = new PlayCanvasScene(el("game"));
+    document.documentElement.dataset.renderer = "playcanvas";
+  } else {
+    const finishLegacyCarve = installLegacyCorridorCarve(Scene);
+    try {
+      view = new Scene(el("game"));
+    } finally {
+      if (view) finishLegacyCarve(view);
+    }
+    addDowntownCinematic(view);
+    addRealHcmContext(view);
+    addPlayableHcmCorridor(view);
+    document.documentElement.dataset.renderer = "three";
   }
-  addDowntownCinematic(view);
-  addRealHcmContext(view);
-  addPlayableHcmCorridor(view);
 } catch (error) {
   el("fatal").hidden = false;
   el("fatal").textContent = ui.t(
-    "Trình duyệt chưa chạy được WebGL 2. Bật tăng tốc phần cứng rồi tải lại trang.",
-    "WebGL 2 could not start. Enable hardware acceleration, then reload the page.",
+    "Trình duyệt chưa khởi động được đồ họa 3D. Bật tăng tốc phần cứng rồi tải lại trang.",
+    "3D graphics could not start. Enable hardware acceleration, then reload the page.",
   );
   console.error(error);
 }
@@ -161,7 +168,7 @@ el("game").addEventListener("webglcontextlost", (event) => {
 });
 el("game").addEventListener("webglcontextrestored", () => {
   el("fatal").hidden = true;
-  if (view) view.renderer.shadowMap.needsUpdate = true;
+  if (view?.renderer?.shadowMap) view.renderer.shadowMap.needsUpdate = true;
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) pause();
