@@ -5,42 +5,42 @@ export const CHAOS = [
     id: "rain",
     start: 18,
     duration: 38,
-    vi: "Mưa tới rồi, đường bắt đầu trơn đó.",
+    vi: "Trời Sài Gòn vừa đổ mưa. Bác tài chạy chậm lại vì mặt đường đang trơn.",
     en: "Here comes the rain. The road's getting slick.",
   },
   {
     id: "rush",
     start: 39,
     duration: 50,
-    vi: "Tan tầm rồi, xe đông lên thấy rõ.",
+    vi: "Giờ tan tầm bắt đầu rồi. Xe đang dồn ra đường lớn, bác tài nhớ canh khoảng trống.",
     en: "Rush hour just kicked in. Traffic's thickening up.",
   },
   {
     id: "potholes",
     start: 60,
     duration: 34,
-    vi: "Đoạn này ổ gà hơi nhiều, nhả ga chút.",
+    vi: "Đoạn phía trước có nhiều ổ gà. Bác tài nhả ga một chút cho đỡ dằn xe.",
     en: "Rough stretch ahead. Ease off the throttle.",
   },
   {
     id: "block",
     start: 87,
     duration: 43,
-    vi: "Phía trước chặn đường rồi. Có hẻm bên cạnh đó.",
+    vi: "Đường phía trước đang bị chặn. Bác tài có thể vòng qua hẻm bên cạnh.",
     en: "Road's blocked ahead. There's a hẻm off to the side.",
   },
   {
     id: "bus",
     start: 112,
     duration: 24,
-    vi: "Xe buýt cắt ngang kìa, coi chừng!",
+    vi: "Xe buýt đang cắt ngang ngã tư. Bác tài coi chừng đầu xe.",
     en: "Bus coming across the junction. Watch it!",
   },
   {
     id: "flood",
     start: 139,
     duration: 40,
-    vi: "Bến Gió ngập rồi, chạy chậm thôi.",
+    vi: "Đường Bến Gió đang ngập. Bác tài chạy chậm để khỏi mất lái.",
     en: "Bến Gió's flooded. Take it easy through there.",
   },
 ];
@@ -105,7 +105,7 @@ export class ChaosDirector {
           p.bounce = 0.85;
           p.speed *= 0.65;
           this.lastPothole = run.time;
-          run.emit("pothole", "Ổ gà!");
+          run.emit("pothole", "Bánh xe vừa dính ổ gà.");
           run.moment("airtime", 0.85);
           break;
         }
