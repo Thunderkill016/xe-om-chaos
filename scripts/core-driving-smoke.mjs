@@ -174,6 +174,33 @@ try {
 
   await page.screenshot({ path: `${output}/after-route.png` });
   await context.close();
+
+  const internationalContext = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+  });
+  const international = await internationalContext.newPage();
+  const internationalErrors = [];
+  international.on("pageerror", (error) => internationalErrors.push(error.message));
+  international.on("console", (message) => {
+    if (message.type() === "error") internationalErrors.push(message.text());
+  });
+  await international.goto(`${base}/en/?seed=2026-09-06`, {
+    waitUntil: "networkidle",
+  });
+  check(
+    "international edition is a separate English entry point",
+    (await international.locator("html").getAttribute("lang")) === "en" &&
+      (await international.getByRole("button", { name: "LET'S RIDE ↗" }).isVisible()) &&
+      (await international.getByRole("button", { name: "LÊN XE THÔI ↗" }).count()) === 0,
+  );
+  await international.getByRole("button", { name: "LET'S RIDE ↗" }).click();
+  check(
+    "international edition enters gameplay without runtime errors",
+    (await international.locator("#timer").isVisible()) && internationalErrors.length === 0,
+  );
+  await international.screenshot({ path: `${output}/international.png` });
+  report.internationalErrors = internationalErrors;
+  await internationalContext.close();
 } catch (error) {
   report.failure = String(error);
   throw error;
