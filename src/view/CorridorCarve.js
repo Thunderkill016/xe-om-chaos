@@ -65,18 +65,7 @@ export function installLegacyCorridorCarve(SceneClass) {
   ) {
     if (overlapsPlayableCorridor(parent, x, y, z, w, h, d))
       return carvedMesh(this, colour, geometry);
-    return originalMesh.call(
-      this,
-      parent,
-      colour,
-      x,
-      y,
-      z,
-      w,
-      h,
-      d,
-      geometry,
-    );
+    return originalMesh.call(this, parent, colour, x, y, z, w, h, d, geometry);
   };
 
   return (view) => {
@@ -105,7 +94,8 @@ export function installLegacyCorridorCarve(SceneClass) {
           h: 2,
           angle: 0,
           kind: "legacy-person",
-        }) >= REAL_HCM_CORRIDOR.shoulderWidth * 0.5,
+        }) >=
+        REAL_HCM_CORRIDOR.shoulderWidth * 0.5,
     );
     view.steamVents = view.steamVents.filter(
       (vent) =>
@@ -117,7 +107,8 @@ export function installLegacyCorridorCarve(SceneClass) {
           h: 1,
           angle: 0,
           kind: "legacy-steam",
-        }) >= REAL_HCM_CORRIDOR.shoulderWidth * 0.5,
+        }) >=
+        REAL_HCM_CORRIDOR.shoulderWidth * 0.5,
     );
   };
 }
