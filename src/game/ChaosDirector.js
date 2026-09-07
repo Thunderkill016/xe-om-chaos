@@ -118,15 +118,65 @@ export class ChaosDirector {
         vehicle.road === this.barrier.x &&
         Math.abs(vehicle.z - this.barrier.z) < 12,
     );
-    if (wanted && !this.barrier.active && trafficClear && distance(p, this.barrier) > 12)
-      this.barrier.active = true;
-    else if (!wanted) this.barrier.active = false;
+    // Do not materialize a roadblock under the rider or through an NPC. Once a
+    // clean gap arrives, central traffic has enough approach distance to bend
+    // around the outside edges rather than ghosting through the barrier.
+    this.barrier.active =
+      wanted &&
+      (this.barrier.active || (distance(p, this.barrier) > 9 && trafficClear));
+
+    // The roadblock sits across both lanes of the central north/south avenue.
+    // Preserve longitudinal cadence and move each direction toward its own curb;
+    // this avoids introducing braking queues that would destroy junction timing.
+    for (const vehicle of run.traffic) {
+      if (vehicle.axis !== "z" || vehicle.road !== this.barrier.x) continue;
+      const baseLane = vehicle.road + vehicle.direction * 2.75;
+      let targetLane = baseLane;
+      if (this.barrier.active) {
+        const toBarrier = (this.barrier.z - vehicle.z) * vehicle.direction;
+        if (toBarrier < 18 && toBarrier > -10) {
+          const approach = clamp((18 - toBarrier) / 8, 0, 1),
+            departure = clamp((toBarrier + 10) / 6, 0, 1),
+            envelope = Math.min(approach, departure),
+            clearance =
+              this.barrier.w / 2 +
+              (vehicle.halfWidth ?? 0.5) +
+              0.45 -
+              Math.abs(baseLane - this.barrier.x);
+          targetLane += vehicle.direction * Math.max(0, clearance) * envelope;
+        }
+      }
+      vehicle.lane +=
+        (targetLane - vehicle.lane) * Math.min(1, CONFIG.step * 8);
+    }
+
+    const busEvent = this.schedule.find((e) => e.id === "bus");
+    if (!busEvent) throw new Error("Chaos schedule requires a bus event");
     this.bus.active = this.active.has("bus");
-    if (this.bus.active) {
-      const busEvent = this.schedule.find((e) => e.id === "bus");
-      this.bus.x = busEvent
-        ? -22 + clamp((run.time - busEvent.start) / busEvent.duration, 0, 1) * 44
-        : -22;
-    } else this.bus.x = -22;
+    this.bus.x = -22 + (run.time - busEvent.start) * 1.9;
+    for (const obstacle of [this.barrier, this.bus])
+      if (
+        obstacle.active &&
+        Math.abs(p.x - obstacle.x) < obstacle.w / 2 + CONFIG.radius &&
+        Math.abs(p.z - obstacle.z) < obstacle.d / 2 + CONFIG.radius
+      ) {
+        if (p.speed > 4) run.crash();
+        // Resolve penetration in the shallow axis. Immunity cannot turn barriers into ghosts.
+        const dx = obstacle.w / 2 + CONFIG.radius - Math.abs(p.x - obstacle.x),
+          dz = obstacle.d / 2 + CONFIG.radius - Math.abs(p.z - obstacle.z);
+        if (dx < dz)
+          p.x =
+            obstacle.x +
+            Math.sign(p.x - obstacle.x || 1) *
+              (obstacle.w / 2 + CONFIG.radius + 0.05);
+        else
+          p.z =
+            obstacle.z +
+            Math.sign(p.z - obstacle.z || 1) *
+              (obstacle.d / 2 + CONFIG.radius + 0.05);
+        p.speed = Math.min(p.speed, 2);
+        p.vx = 0;
+        p.vz = 0;
+      }
   }
 }
