@@ -1,17 +1,12 @@
 import * as THREE from "three";
 import { HCMC_OSM_DATA } from "../world/hcm-downtown-data.js";
+import { REAL_HCM_CORRIDOR } from "../world/HcmCorridor.js";
 import { cityChunks } from "./batch.js";
 
-// Real-world downtown context generated from the exact OSM bounds used by the
-// Blender source: Bến Thành -> Nguyễn Huệ -> Ba Son -> Saigon River.
-// The current gameplay graph remains authoritative inside the central reserve;
-// real OSM massing takes over around it so the city can become authentic before
-// we migrate traffic/collision onto the OSM road graph in a later gameplay pass.
-const GAME_SCALE = 0.12;
-const CORE_RESERVE = 76;
-const ROAD_RESERVE = 68;
-const MAX_BUILDINGS_LOW = 260;
-const MAX_BUILDINGS_HIGH = 720;
+const CONTEXT_RADIUS = 108;
+const BACKGROUND_BUILDING_MIN = 18;
+const MAX_BUILDINGS_LOW = 120;
+const MAX_BUILDINGS_HIGH = 260;
 const MAJOR = new Set([
   "motorway",
   "trunk",
@@ -21,70 +16,122 @@ const MAJOR = new Set([
 ]);
 /** @type {Record<string, number>} */
 const ROAD_COLOUR = {
-  motorway: 0x30363a,
-  trunk: 0x343a3d,
-  primary: 0x383e41,
-  secondary: 0x3d4346,
-  tertiary: 0x444a4d,
-  residential: 0x51565a,
-  service: 0x585d60,
-  living_street: 0x5d6264,
-  pedestrian: 0x89887c,
-  footway: 0x9b9788,
-  path: 0x858b7d,
-  cycleway: 0x727d73,
-  unclassified: 0x565b5e,
+  motorway: 0x2d3236,
+  trunk: 0x32383b,
+  primary: 0x383e42,
+  secondary: 0x41474a,
+  tertiary: 0x494f52,
+  residential: 0x555a5d,
+  service: 0x5d6265,
+  living_street: 0x666967,
+  pedestrian: 0x989382,
+  footway: 0xa7a08e,
+  path: 0x858c7e,
+  cycleway: 0x737e74,
+  unclassified: 0x5b6062,
 };
-const FACADE_LOW = [0xc9b18d, 0xc98870, 0xa4aa91, 0xd3c9ad, 0x879b9d];
-const FACADE_HIGH = [0x526c76, 0x607b82, 0x6d8589, 0x71868c, 0x4b626c];
+const FACADE_LOW = [0xc5ae8b, 0xc4836d, 0xa0a68e, 0xd2c5a6, 0x869a9b];
+const FACADE_HIGH = [0x526b75, 0x607981, 0x6d8589, 0x71868c, 0x4a616b];
 
 /** @typedef {[number, number]} OsmPoint */
 /** @typedef {[string, number, OsmPoint[]]} OsmRoad */
 /** @typedef {[string, OsmPoint[]]} OsmWater */
 /** @typedef {[number, number, number, number, number, number, string]} OsmBuilding */
 
-const scaled = (value) => value * GAME_SCALE;
-const radius = (x, z) => Math.hypot(scaled(x), scaled(z));
+function sourceToGame(x, z) {
+  const dx = x - REAL_HCM_CORRIDOR.sourceOrigin[0];
+  const dz = z - REAL_HCM_CORRIDOR.sourceOrigin[1];
+  return {
+    x:
+      (dx * REAL_HCM_CORRIDOR.transformCos -
+        dz * REAL_HCM_CORRIDOR.transformSin) *
+      REAL_HCM_CORRIDOR.scale,
+    z:
+      72 +
+      (dx * REAL_HCM_CORRIDOR.transformSin +
+        dz * REAL_HCM_CORRIDOR.transformCos) *
+        REAL_HCM_CORRIDOR.scale,
+  };
+}
 
-function roadRibbon(view, parent, a, b, width, colour) {
-  const ax = scaled(a[0]);
-  const az = scaled(a[1]);
-  const bx = scaled(b[0]);
-  const bz = scaled(b[1]);
-  const dx = bx - ax;
-  const dz = bz - az;
+function pointToSegmentDistance(x, z, a, b) {
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const denominator = dx * dx + dz * dz;
+  if (denominator <= 1e-9) return Math.hypot(x - a.x, z - a.z);
+  const t = Math.max(
+    0,
+    Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / denominator),
+  );
+  return Math.hypot(x - (a.x + dx * t), z - (a.z + dz * t));
+}
+
+function corridorDistance(x, z) {
+  let best = Infinity;
+  for (let index = 1; index < REAL_HCM_CORRIDOR.points.length; index++)
+    best = Math.min(
+      best,
+      pointToSegmentDistance(
+        x,
+        z,
+        REAL_HCM_CORRIDOR.points[index - 1],
+        REAL_HCM_CORRIDOR.points[index],
+      ),
+    );
+  return best;
+}
+
+function roadRibbon(view, parent, a, b, width, colour, y = 0.035) {
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
   const length = Math.hypot(dx, dz);
   if (length < 0.25) return;
   const mesh = view.mesh(
     parent,
     colour,
-    (ax + bx) * 0.5,
-    0.045,
-    (az + bz) * 0.5,
-    Math.max(0.24, scaled(width)),
-    0.06,
+    (a.x + b.x) * 0.5,
+    y,
+    (a.z + b.z) * 0.5,
+    Math.max(0.28, width * REAL_HCM_CORRIDOR.scale),
+    0.055,
     length,
   );
   mesh.rotation.y = Math.atan2(dx, dz);
 }
 
-function areaBox(view, parent, points, colour, y = 0.025) {
-  if (!points?.length) return;
-  let minX = Infinity,
-    maxX = -Infinity,
-    minZ = Infinity,
-    maxZ = -Infinity;
-  for (const [x, z] of points) {
-    minX = Math.min(minX, x);
-    maxX = Math.max(maxX, x);
-    minZ = Math.min(minZ, z);
-    maxZ = Math.max(maxZ, z);
+function transformedBounds(points) {
+  if (!points?.length) return null;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  for (const [sx, sz] of points) {
+    const point = sourceToGame(sx, sz);
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minZ = Math.min(minZ, point.z);
+    maxZ = Math.max(maxZ, point.z);
   }
-  const cx = scaled((minX + maxX) * 0.5);
-  const cz = scaled((minZ + maxZ) * 0.5);
-  const w = Math.max(0.8, scaled(maxX - minX));
-  const d = Math.max(0.8, scaled(maxZ - minZ));
-  view.mesh(parent, colour, cx, y, cz, w, 0.08, d);
+  const x = (minX + maxX) * 0.5;
+  const z = (minZ + maxZ) * 0.5;
+  return { x, z, w: maxX - minX, d: maxZ - minZ };
+}
+
+function areaBox(view, parent, points, colour, y = 0.018) {
+  const bounds = transformedBounds(points);
+  if (!bounds) return;
+  if (corridorDistance(bounds.x, bounds.z) > CONTEXT_RADIUS) return;
+  if (bounds.w > 150 || bounds.d > 150) return;
+  view.mesh(
+    parent,
+    colour,
+    bounds.x,
+    y,
+    bounds.z,
+    Math.max(0.8, bounds.w),
+    0.055,
+    Math.max(0.8, bounds.d),
+  );
 }
 
 export function addRealHcmContext(view) {
@@ -103,57 +150,75 @@ export function addRealHcmContext(view) {
     quality === "low" ? MAX_BUILDINGS_LOW : MAX_BUILDINGS_HIGH;
 
   for (const feature of greenFeatures)
-    areaBox(view, solid, feature, 0x4b7157, 0.02);
+    areaBox(view, solid, feature, 0x4f7359, 0.012);
   for (const [kind, points] of waterFeatures) {
-    if (kind === "area") areaBox(view, solid, points, 0x397c86, -0.02);
+    if (kind === "area") areaBox(view, solid, points, 0x397b86, -0.015);
     else
-      for (let i = 1; i < points.length; i++)
-        roadRibbon(view, solid, points[i - 1], points[i], 13, 0x397c86);
+      for (let index = 1; index < points.length; index++) {
+        const a = sourceToGame(...points[index - 1]);
+        const b = sourceToGame(...points[index]);
+        const midpoint = { x: (a.x + b.x) * 0.5, z: (a.z + b.z) * 0.5 };
+        if (corridorDistance(midpoint.x, midpoint.z) <= CONTEXT_RADIUS)
+          roadRibbon(view, solid, a, b, 13, 0x397b86, -0.012);
+      }
   }
 
   for (const [type, width, points] of roads) {
     const major = MAJOR.has(type);
     const colour = ROAD_COLOUR[type] ?? ROAD_COLOUR.unclassified;
-    for (let i = 1; i < points.length; i++) {
-      const a = points[i - 1];
-      const b = points[i];
-      const mx = (a[0] + b[0]) * 0.5;
-      const mz = (a[1] + b[1]) * 0.5;
-      if (!major && radius(mx, mz) < ROAD_RESERVE) continue;
+    for (let index = 1; index < points.length; index++) {
+      const a = sourceToGame(...points[index - 1]);
+      const b = sourceToGame(...points[index]);
+      const midpoint = { x: (a.x + b.x) * 0.5, z: (a.z + b.z) * 0.5 };
+      const distance = corridorDistance(midpoint.x, midpoint.z);
+      if (distance > CONTEXT_RADIUS) continue;
+      if (!major && distance < REAL_HCM_CORRIDOR.shoulderWidth * 0.6) continue;
       roadRibbon(view, solid, a, b, width, colour);
     }
   }
 
   let made = 0;
-  for (let i = 0; i < buildings.length && made < buildingLimit; i++) {
-    const [mx, mz, mw, md, mh, angle, kind] = buildings[i];
-    const x = scaled(mx);
-    const z = scaled(mz);
-    if (Math.hypot(x, z) < CORE_RESERVE) continue;
-    const h = Math.max(1.6, scaled(mh));
-    const w = Math.max(0.8, scaled(mw));
-    const d = Math.max(0.8, scaled(md));
-    if (w > 24 || d > 24) continue;
+  for (let index = 0; index < buildings.length && made < buildingLimit; index++) {
+    const [sx, sz, sw, sd, sh, angle, kind] = buildings[index];
+    const position = sourceToGame(sx, sz);
+    const distance = corridorDistance(position.x, position.z);
+    if (distance < BACKGROUND_BUILDING_MIN || distance > CONTEXT_RADIUS) continue;
+    const w = Math.max(1.2, sw * REAL_HCM_CORRIDOR.scale);
+    const d = Math.max(1.2, sd * REAL_HCM_CORRIDOR.scale);
+    if (w > 30 || d > 30) continue;
+    const h = Math.max(2.5, Math.min(42, sh * 0.22));
     const high =
-      mh >= 38 ||
+      sh >= 38 ||
       ["office", "hotel", "commercial", "apartments"].includes(kind);
     const palette = high ? FACADE_HIGH : FACADE_LOW;
-    const colour = palette[(i * 7 + Math.round(mh)) % palette.length];
-    const mesh = view.mesh(solid, colour, x, h * 0.5, z, w, h, d);
-    mesh.rotation.y = angle;
-    if (high && h > 4.2 && i % 3 !== 0) {
-      const glass = view.mesh(
-        solid,
-        i % 5 === 0 ? 0xd7ad66 : 0x7f9ea3,
-        x,
-        Math.min(h - 0.6, h * 0.58),
-        z - Math.cos(angle) * (d * 0.51),
-        Math.max(0.5, w * 0.56),
-        Math.max(0.35, h * 0.045),
-        0.06,
-      );
-      glass.rotation.y = angle;
-    }
+    const colour = palette[(index * 7 + Math.round(sh)) % palette.length];
+    const group = new THREE.Group();
+    group.position.set(position.x, 0, position.z);
+    group.rotation.y = angle - REAL_HCM_CORRIDOR.sourceHeading;
+    solid.add(group);
+    view.mesh(group, colour, 0, h * 0.5, 0, w, h, d);
+    view.mesh(
+      group,
+      high ? 0x465c63 : 0x776d5e,
+      0,
+      h + 0.12,
+      0,
+      Math.max(1, w * 0.88),
+      0.24,
+      Math.max(1, d * 0.88),
+    );
+    if (h > 6 && index % 2 === 0)
+      for (let floor = 3.4; floor < h - 1; floor += 3.2)
+        view.mesh(
+          group,
+          index % 5 === 0 ? 0xd6aa68 : 0x77979d,
+          0,
+          floor,
+          -d * 0.505,
+          Math.max(0.9, w * 0.58),
+          0.5,
+          0.06,
+        );
     made++;
   }
 
@@ -166,6 +231,7 @@ export function addRealHcmContext(view) {
     buildings: made,
     roads: roads.length,
     bounds: data.bounds,
+    alignedTo: REAL_HCM_CORRIDOR.id,
   };
   return batch;
 }
