@@ -27,6 +27,8 @@ jobs:
           git fetch origin "$GITHUB_HEAD_REF"
           git checkout -B "$GITHUB_HEAD_REF" "origin/$GITHUB_HEAD_REF"
           node scripts/apply-cinematic-visual-pass.mjs
+          sed -i 's#https://overpass-api.de/api/interpreter#https://overpass.private.coffee/api/interpreter#' scripts/generate-hcm-osm.mjs
+          sed -i 's#https://overpass.kumi.systems/api/interpreter#https://maps.mail.ru/osm/tools/overpass/api/interpreter#' scripts/generate-hcm-osm.mjs
           node scripts/generate-hcm-osm.mjs
           npm run format
           if ! git diff --quiet; then
