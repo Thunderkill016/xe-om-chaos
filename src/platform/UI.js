@@ -7,19 +7,19 @@ const APPROACH_DISTANCE = 13;
 const FIRST_MOVEMENT_DISTANCE = 3;
 const PASSENGER_PREFERENCES = {
   office: [
-    "Đang trễ họp — tới sớm được thưởng thêm",
+    "Khách đang trễ giờ. Cuốc này được thêm tiền nếu bác tài trả khách sớm.",
     "Late for a meeting — getting there early pays extra",
   ],
   grandma: [
-    "Cô Tư sợ xóc — chạy êm được thưởng thêm",
+    "Cô Tư không vội. Cuốc này được thêm tiền nếu bác tài chạy êm.",
     "Cô Tư hates a bumpy ride — keep it smooth for extra fare",
   ],
   student: [
-    "Sinh viên rành hẻm — đi hẻm được thưởng thêm",
+    "Bạn sinh viên rành khu này. Cuốc này được thêm tiền nếu bác tài đi xuyên hẻm.",
     "This student knows the hẻm — take one for extra fare",
   ],
   chaos: [
-    "Khách thích lách đẹp — sát nhưng đừng quẹt",
+    "Khách này thích cảm giác mạnh. Cuốc này được thêm tiền nếu bác tài lách sát mà không va quẹt.",
     "Your passenger loves a clean close pass — close, not crashed",
   ],
 };
@@ -49,54 +49,59 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
   const slowEnough = Math.abs(run.player.speed) < CONFIG.stopSpeed;
   const overdue = !pickup && mission.deadline < 0;
   let stage = "route";
-  let hint = text(
-    "Đường nào cũng tới. Thấy hẻm thông thì cứ quẹo.",
-    "Any route works. If a hẻm looks open, take it.",
-  );
+  let hint = pickup
+    ? text(
+        "Cuốc vừa nổ. Bác tài đang chạy tới điểm đón; đường lớn kẹt thì canh hẻm thông mà né.",
+        "Head to the pickup. If the main road locks up, look for a hẻm that goes through.",
+      )
+    : text(
+        "Khách đã lên xe. Bác tài đang chạy tới điểm trả; đường lớn kẹt thì canh hẻm thông mà né.",
+        "Passenger's on board. Get them to the drop-off; use a hẻm if the main road jams up.",
+      );
 
   if (run.player.recovery > 0) {
     stage = "recovery";
     hint = text(
-      "Ui, từ từ. Dựng xe lại rồi đi tiếp.",
+      "Xe vừa va quẹt. Bác tài dựng xe thẳng lại rồi hãy lên ga tiếp.",
       "Easy. Get the bike straight and keep going.",
     );
   } else if (inside && slowEnough) {
     stage = "boarding";
     hint = pickup
       ? text(
-          "Đứng yên chút, khách đang leo lên.",
+          "Bác tài đứng yên một chút để khách lên xe cho chắc.",
           "Hold still a sec. Your passenger's getting on.",
         )
       : text(
-          "Khoan chạy, để khách xuống hẳn đã.",
+          "Bác tài đứng yên một chút để khách xuống xe cho hẳn.",
           "Hold up. Let them get off first.",
         );
   } else if (targetDistance < APPROACH_DISTANCE) {
     stage = "brake";
     hint = pickup
       ? text(
-          "Tới điểm đón rồi, rà thắng vào vòng vàng.",
+          "Bác tài sắp tới điểm đón. Rà thắng và dừng gọn trong vòng vàng.",
           "You're here. Brake into the yellow ring.",
         )
       : text(
-          "Tới nơi rồi, rà thắng vào vòng xanh.",
+          "Bác tài sắp tới điểm trả. Rà thắng và dừng gọn trong vòng xanh.",
           "That's the stop. Brake into the green ring.",
         );
   } else if (run.stats.distance < FIRST_MOVEMENT_DISTANCE) {
     stage = "depart";
     hint = touch
       ? text(
-          "Giữ ga ↑ để chạy, bấm ←/→ để quẹo.",
+          "Bác tài giữ ga ↑ để xe chạy; bấm ←/→ để quẹo.",
           "Hold GO ↑ to move. Tap ←/→ to steer.",
         )
       : text(
-          "W / ↑ để chạy, A/D để quẹo, S để thắng.",
+          "Bác tài giữ W / ↑ để lên ga; dùng A/D để quẹo và S để thắng.",
           "W / ↑ to ride, A/D to steer, S to brake.",
         );
   } else if (overdue) {
     stage = "overdue";
     hint = text(
-      "Trễ rồi, nhưng cứ đưa khách tới nơi đã.",
+      "Cuốc này trễ giờ rồi, nhưng bác tài vẫn phải trả khách đúng điểm.",
       "Late, but the ride isn't over. Get them there.",
     );
   }
@@ -106,13 +111,13 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
     stage,
     hint,
     phase: pickup
-      ? text("Đi đón khách", "Pick up passenger")
-      : text("Đưa khách tới nơi", "Take passenger there"),
+      ? text("Bác tài đang chạy tới điểm đón", "Pick up passenger")
+      : text("Bác tài đang đưa khách tới điểm trả", "Take passenger there"),
     preference: text(preference[0], preference[1]),
     deadline: pickup
       ? ""
       : overdue
-        ? text("Trễ rồi", "Late")
+        ? text("Cuốc này đã trễ", "Late")
         : Math.ceil(mission.deadline) + " s",
     showProgress: inside && run.player.recovery === 0,
     progress:
@@ -120,8 +125,8 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
         ? clamp(mission.dwell / CONFIG.boardingSeconds, 0, 1)
         : 0,
     progressLabel: pickup
-      ? text("Đang đón khách", "Passenger boarding")
-      : text("Đang trả khách", "Passenger getting off"),
+      ? text("Khách đang lên xe", "Passenger boarding")
+      : text("Khách đang xuống xe", "Passenger getting off"),
   };
 }
 
@@ -143,15 +148,15 @@ export class UI {
     this.prefs =
       saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
     el("daily-label").textContent = this.t(
-      "Cuốc hôm nay · " + seed,
+      "Ca chạy app hôm nay · " + seed,
       "Today's run · " + seed,
     );
     const best = this.read(this.bestKey(), 0);
     el("welcome-best").textContent = best
-      ? this.t("Điểm cao nhất hôm nay: ", "Today's best: ") +
+      ? this.t("Hôm nay bác tài đang có kỷ lục: ", "Today's best: ") +
         best.toLocaleString()
       : this.t(
-          "Không cần đăng nhập. Nổ máy là chạy.",
+          "Bác tài không cần đăng nhập. App nổ cuốc là chạy.",
           "No account. Just hop on and ride.",
         );
   }
@@ -206,24 +211,44 @@ export class UI {
     else if (event.type === "delivery")
       text = this.t(
         event.text.toLowerCase().includes("trễ")
-          ? "Trễ chút, nhưng tới nơi rồi."
-          : "Tới rồi, cảm ơn nha!",
+          ? "Khách đã tới điểm trả, nhưng cuốc này bị trễ giờ."
+          : "Khách đã tới điểm trả. Cuốc này chốt xong.",
         event.text.toLowerCase().includes("trễ")
           ? "A little late, but you made it."
           : "Made it. Thanks for the ride!",
       );
     else if (event.type === "crash")
-      text = this.t("Ui, coi chừng!", "Whoa, watch it!");
+      text = this.t(
+        "Khách phía sau giật mình: “Anh ơi, coi chừng!”",
+        "Whoa, watch it!",
+      );
     else if (event.type === "discovery")
-      text = this.t("Ủa, hẻm này thông nè!", "Hey, this hẻm goes through!");
+      text = this.t(
+        "Bác tài vừa phát hiện Hẻm 26 thông ra đường bên kia.",
+        "Hey, this hẻm goes through!",
+      );
     else if (event.type === "thread")
-      text = this.t("Cú đó ngọt à nha!", "That gap was clean!");
-    else if (event.type === "pothole") text = this.t("Ổ gà!", "Pothole!");
+      text = this.t(
+        "Bác tài vừa lách lọt hai xe. Cuốc này đang chạy khá ngọt.",
+        "That gap was clean!",
+      );
+    else if (event.type === "pothole")
+      text = this.t("Bánh trước vừa dính ổ gà.", "Pothole!");
     else if (event.text.includes("LÁCH ĐẸP"))
-      text = this.t("Lách đẹp đó!", "Nice pass!");
+      text = this.t(
+        "Bác tài vừa lách qua một khe đẹp.",
+        "Nice pass!",
+      );
     else if (event.text.includes("HẺM MASTER"))
-      text = this.t("Rành hẻm dữ!", "You really know the alleys!");
-    else if (event.text.includes("MƯỢT")) text = this.t("Êm đó!", "Smooth!");
+      text = this.t(
+        "Bác tài đi hẻm như người trong khu.",
+        "You really know the alleys!",
+      );
+    else if (event.text.includes("MƯỢT"))
+      text = this.t(
+        "Khách phía sau đang ngồi khá êm.",
+        "Smooth!",
+      );
     el("reaction").textContent = text + suffix;
     el("reaction").dataset.event = event.type;
     this.reactionUntil = time + 2.3;
@@ -378,24 +403,27 @@ export class UI {
         : this.storageAvailable;
     const title =
       result.alleys >= 3
-        ? this.t("RÀNH HẺM THIỆT", "YOU KNOW THE ALLEYS")
+        ? this.t("BÁC TÀI RÀNH HẺM", "YOU KNOW THE ALLEYS")
         : result.nearMisses >= 12
-          ? this.t("LÁCH CŨNG NGỌT", "THAT WAS TIGHT")
+          ? this.t("BÁC TÀI LÁCH KHÉO", "THAT WAS TIGHT")
           : result.horns >= 20
-            ? this.t("CÒI HƠI NHIỀU NHA", "EASY ON THE HORN")
+            ? this.t("BÁC TÀI BÓP CÒI HƠI NHIỀU", "EASY ON THE HORN")
             : result.crashes >= 5
-              ? this.t("XE HƠI XƯỚC RỒI", "BIKE'S SEEN BETTER DAYS")
-              : this.t("CUỐC NÀY ỔN ÁP", "SOLID SAIGON RUN");
+              ? this.t("BÁC TÀI HÔM NAY HƠI XUI", "BIKE'S SEEN BETTER DAYS")
+              : this.t("CA NÀY BÁC TÀI CHẠY ỔN", "SOLID SAIGON RUN");
     el("result-title").textContent = title;
     el("result-score").textContent = result.score.toLocaleString();
     el("best-message").textContent = !saved
       ? this.t(
-          "Máy này không lưu được kỷ lục, nhưng ảnh kết quả vẫn lưu được.",
+          "Máy này không lưu được kỷ lục, nhưng bác tài vẫn có thể lưu ảnh kết quả.",
           "Couldn't save the local best, but you can still save the image.",
         )
       : result.score > best
-        ? this.t("Mới phá kỷ lục trên máy này ✦", "New best on this device ✦")
-        : this.t("Kỷ lục trên máy này: ", "Best on this device: ") +
+        ? this.t(
+            "Bác tài vừa phá kỷ lục trên máy này ✦",
+            "New best on this device ✦",
+          )
+        : this.t("Kỷ lục trên máy này đang là: ", "Best on this device: ") +
           best.toLocaleString();
     el("result-grid").replaceChildren();
     for (const [label, value] of [
@@ -419,7 +447,7 @@ export class UI {
       " · " +
       run.seed +
       " UTC · " +
-      this.t("CHƠI TRÊN MÁY NÀY", "PLAYED ON THIS DEVICE");
+      this.t("ĐIỂM TRÊN MÁY NÀY", "PLAYED ON THIS DEVICE");
     el("results").showModal();
   }
 }
