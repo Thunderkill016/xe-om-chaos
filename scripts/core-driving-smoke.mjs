@@ -195,7 +195,9 @@ try {
   await international.goto(`${base}/en/?seed=2026-09-06`, {
     waitUntil: "networkidle",
   });
-  const englishStart = (await international.locator("#start").textContent())?.trim();
+  const englishStart = (
+    await international.locator("#start").textContent()
+  )?.trim();
   check(
     "international edition is a separate English entry point",
     (await international.locator("html").getAttribute("lang")) === "en" &&

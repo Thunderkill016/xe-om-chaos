@@ -148,7 +148,8 @@ export class UI {
     );
     const best = this.read(this.bestKey(), 0);
     el("welcome-best").textContent = best
-      ? this.t("Điểm cao nhất hôm nay: ", "Today's best: ") + best.toLocaleString()
+      ? this.t("Điểm cao nhất hôm nay: ", "Today's best: ") +
+        best.toLocaleString()
       : this.t(
           "Không cần đăng nhập. Nổ máy là chạy.",
           "No account. Just hop on and ride.",
@@ -211,7 +212,8 @@ export class UI {
           ? "A little late, but you made it."
           : "Made it. Thanks for the ride!",
       );
-    else if (event.type === "crash") text = this.t("Ui, coi chừng!", "Whoa, watch it!");
+    else if (event.type === "crash")
+      text = this.t("Ui, coi chừng!", "Whoa, watch it!");
     else if (event.type === "discovery")
       text = this.t("Ủa, hẻm này thông nè!", "Hey, this hẻm goes through!");
     else if (event.type === "thread")

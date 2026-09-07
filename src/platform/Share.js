@@ -106,7 +106,14 @@ export function resultCard(result, language = "vi") {
   c.fillRect(70, 1101, 940, 94);
   c.fillStyle = "#183536";
   c.font = "900 36px Arial";
-  c.fillText(en ? "YOUR TURN. FIND A BETTER WAY ↗" : "TỚI LƯỢT BẠN. KIẾM ĐƯỜNG NGON HƠN ↗", 106, 1163, 860);
+  c.fillText(
+    en
+      ? "YOUR TURN. FIND A BETTER WAY ↗"
+      : "TỚI LƯỢT BẠN. KIẾM ĐƯỜNG NGON HƠN ↗",
+    106,
+    1163,
+    860,
+  );
   c.fillStyle = "#f5edda";
   c.font = "22px monospace";
   c.fillText(result.seed + " UTC · " + CONFIG.version, 74, 1254);
