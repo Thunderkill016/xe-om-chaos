@@ -6,10 +6,22 @@ import { CHAOS } from "../game/ChaosDirector.js";
 const APPROACH_DISTANCE = 13;
 const FIRST_MOVEMENT_DISTANCE = 3;
 const PASSENGER_PREFERENCES = {
-  office: ["THƯỞNG · ĐẾN SỚM", "BONUS · ARRIVE EARLY"],
-  grandma: ["THƯỞNG · CHẠY ÊM", "BONUS · RIDE SMOOTHLY"],
-  student: ["THƯỞNG · ĐI XUYÊN HẺM", "BONUS · TAKE AN ALLEY"],
-  chaos: ["THƯỞNG · LÁCH XE AN TOÀN", "BONUS · SAFE CLOSE PASSES"],
+  office: [
+    "Đang trễ họp — tới sớm được thưởng thêm",
+    "Late for a meeting — getting there early pays extra",
+  ],
+  grandma: [
+    "Cô Tư sợ xóc — chạy êm được thưởng thêm",
+    "Cô Tư hates a bumpy ride — keep it smooth for extra fare",
+  ],
+  student: [
+    "Sinh viên rành hẻm — đi hẻm được thưởng thêm",
+    "This student knows the hẻm — take one for extra fare",
+  ],
+  chaos: [
+    "Khách thích lách đẹp — sát nhưng đừng quẹt",
+    "Your passenger loves a clean close pass — close, not crashed",
+  ],
 };
 const EN_STOPS = {
   "CÀ PHÊ MÂY NHỎ": "MÂY NHỎ CAFÉ",
@@ -38,51 +50,54 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
   const overdue = !pickup && mission.deadline < 0;
   let stage = "route";
   let hint = text(
-    "ĐƯỜNG LỚN HAY CHUI HẺM? TÙY TAY LÁI.",
-    "MAIN ROAD OR ALLEY? YOUR CALL.",
+    "Đường nào cũng tới. Thấy hẻm thông thì cứ quẹo.",
+    "Any route works. If a hẻm looks open, take it.",
   );
 
   if (run.player.recovery > 0) {
     stage = "recovery";
     hint = text(
-      "BÌNH TĨNH · LẤY LẠI TAY LÁI",
-      "EASY · GET THE BIKE BACK UNDER YOU",
+      "Ui, từ từ. Dựng xe lại rồi đi tiếp.",
+      "Easy. Get the bike straight and keep going.",
     );
   } else if (inside && slowEnough) {
     stage = "boarding";
     hint = pickup
       ? text(
-          "GIỮ PHANH · ĐỢI KHÁCH LÊN XE",
-          "HOLD THE BRAKE · PASSENGER'S GETTING ON",
+          "Đứng yên chút, khách đang leo lên.",
+          "Hold still a sec. Your passenger's getting on.",
         )
       : text(
-          "GIỮ PHANH · ĐỢI KHÁCH XUỐNG XE",
-          "HOLD THE BRAKE · PASSENGER'S GETTING OFF",
+          "Khoan chạy, để khách xuống hẳn đã.",
+          "Hold up. Let them get off first.",
         );
   } else if (targetDistance < APPROACH_DISTANCE) {
     stage = "brake";
     hint = pickup
       ? text(
-          "↓ CHẬM LẠI · DỪNG TRONG VÒNG VÀNG",
-          "↓ SLOW DOWN · STOP IN THE YELLOW RING",
+          "Tới điểm đón rồi, rà thắng vào vòng vàng.",
+          "You're here. Brake into the yellow ring.",
         )
       : text(
-          "↓ CHẬM LẠI · DỪNG TRONG VÒNG XANH",
-          "↓ SLOW DOWN · STOP IN THE GREEN RING",
+          "Tới nơi rồi, rà thắng vào vòng xanh.",
+          "That's the stop. Brake into the green ring.",
         );
   } else if (run.stats.distance < FIRST_MOVEMENT_DISTANCE) {
     stage = "depart";
     hint = touch
-      ? text("GIỮ NÚT GA ↑ · CHẠM ←/→ ĐỂ RẼ", "HOLD GO ↑ · TOUCH ←/→ TO STEER")
+      ? text(
+          "Giữ ga để chạy, bấm ←/→ để quẹo.",
+          "Hold GO to move. Tap ←/→ to steer.",
+        )
       : text(
-          "GIỮ W / ↑ ĐỂ LÊN GA · A/D ĐỂ RẼ · S ĐỂ PHANH",
-          "HOLD W / ↑ TO GO · A/D TO STEER · S TO BRAKE",
+          "W / ↑ để chạy, A/D để quẹo, S để thắng.",
+          "W / ↑ to ride, A/D to steer, S to brake.",
         );
   } else if (overdue) {
     stage = "overdue";
     hint = text(
-      "TRỄ RỒI · CỨ ĐƯA KHÁCH TỚI NƠI",
-      "YOU'RE LATE · YOU CAN STILL DROP OFF",
+      "Trễ rồi, nhưng cứ đưa khách tới nơi đã.",
+      "Late, but the ride isn't over. Get them there.",
     );
   }
 
@@ -91,13 +106,13 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
     stage,
     hint,
     phase: pickup
-      ? text("ĐÓN KHÁCH · VÒNG VÀNG", "PICKUP · YELLOW RING")
-      : text("TRẢ KHÁCH · VÒNG XANH", "DROPOFF · GREEN RING"),
+      ? text("Đi đón khách", "Pick up passenger")
+      : text("Đưa khách tới nơi", "Take passenger there"),
     preference: text(preference[0], preference[1]),
     deadline: pickup
       ? ""
       : overdue
-        ? text("QUÁ GIỜ", "LATE")
+        ? text("Trễ rồi", "Late")
         : Math.ceil(mission.deadline) + " s",
     showProgress: inside && run.player.recovery === 0,
     progress:
@@ -105,8 +120,8 @@ export function getMissionGuidance(run, language = "vi", touch = false) {
         ? clamp(mission.dwell / CONFIG.boardingSeconds, 0, 1)
         : 0,
     progressLabel: pickup
-      ? text("Tiến độ đón khách", "Pickup progress")
-      : text("Tiến độ trả khách", "Drop-off progress"),
+      ? text("Đang đón khách", "Passenger boarding")
+      : text("Đang trả khách", "Passenger getting off"),
   };
 }
 
@@ -128,15 +143,15 @@ export class UI {
     this.prefs =
       saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
     el("daily-label").textContent = this.t(
-      "CUỐC HÔM NAY · " + seed,
-      "DAILY RUN · " + seed,
+      "Cuốc hôm nay · " + seed,
+      "Today's run · " + seed,
     );
     const best = this.read(this.bestKey(), 0);
     el("welcome-best").textContent = best
-      ? this.t("KỶ LỤC HÔM NAY · ", "TODAY'S BEST · ") + best.toLocaleString()
+      ? this.t("Điểm cao nhất hôm nay: ", "Today's best: ") + best.toLocaleString()
       : this.t(
-          "KHÔNG CẦN TÀI KHOẢN. LÊN XE LÀ CHẠY.",
-          "NO ACCOUNT. JUST RIDE.",
+          "Không cần đăng nhập. Nổ máy là chạy.",
+          "No account. Just hop on and ride.",
         );
   }
   t(vi, en) {
@@ -189,20 +204,24 @@ export class UI {
     else if (chaos) text = this.t(chaos.vi, chaos.en);
     else if (event.type === "delivery")
       text = this.t(
-        event.text.includes("MUỘN") ? "TRỄ NHƯNG TỚI!" : "TỚI RỒI!",
-        event.text.includes("MUỘN") ? "LATE, BUT MADE IT!" : "MADE IT!",
+        event.text.toLowerCase().includes("trễ")
+          ? "Trễ chút, nhưng tới nơi rồi."
+          : "Tới rồi, cảm ơn nha!",
+        event.text.toLowerCase().includes("trễ")
+          ? "A little late, but you made it."
+          : "Made it. Thanks for the ride!",
       );
-    else if (event.type === "crash") text = this.t("ỦA?!", "WHOOPS!");
+    else if (event.type === "crash") text = this.t("Ui, coi chừng!", "Whoa, watch it!");
     else if (event.type === "discovery")
-      text = this.t("HẺM 26 · THẤY LỐI TẮT!", "HẺM 26 · SHORTCUT FOUND!");
+      text = this.t("Ủa, hẻm này thông nè!", "Hey, this hẻm goes through!");
     else if (event.type === "thread")
-      text = this.t("LÁCH KÉP! +BỨT TỐC", "THREAD THE GAP! +BOOST");
-    else if (event.type === "pothole") text = this.t("ỐI!", "BUMP!");
+      text = this.t("Cú đó ngọt à nha!", "That gap was clean!");
+    else if (event.type === "pothole") text = this.t("Ổ gà!", "Pothole!");
     else if (event.text.includes("LÁCH ĐẸP"))
-      text = this.t("LÁCH NGỌT!", "CLEAN PASS!");
+      text = this.t("Lách đẹp đó!", "Nice pass!");
     else if (event.text.includes("HẺM MASTER"))
-      text = this.t("RÀNH HẺM!", "ALLEY ACE!");
-    else if (event.text.includes("MƯỢT")) text = this.t("MƯỢT!", "SMOOTH!");
+      text = this.t("Rành hẻm dữ!", "You really know the alleys!");
+    else if (event.text.includes("MƯỢT")) text = this.t("Êm đó!", "Smooth!");
     el("reaction").textContent = text + suffix;
     el("reaction").dataset.event = event.type;
     this.reactionUntil = time + 2.3;
@@ -357,33 +376,33 @@ export class UI {
         : this.storageAvailable;
     const title =
       result.alleys >= 3
-        ? this.t("TRÙM HẺM", "ALLEY ACE")
+        ? this.t("RÀNH HẺM THIỆT", "YOU KNOW THE ALLEYS")
         : result.nearMisses >= 12
-          ? this.t("LÁCH NHƯ NƯỚC", "TRAFFIC DANCER")
+          ? this.t("LÁCH CŨNG NGỌT", "THAT WAS TIGHT")
           : result.horns >= 20
-            ? this.t("CÒI TRƯỞNG", "HORN HAPPY")
+            ? this.t("CÒI HƠI NHIỀU NHA", "EASY ON THE HORN")
             : result.crashes >= 5
-              ? this.t("NGÃ VẪN CHẠY", "STILL RIDING")
-              : this.t("TAY LÁI SÀI GÒN", "SAIGON RIDER");
+              ? this.t("XE HƠI XƯỚC RỒI", "BIKE'S SEEN BETTER DAYS")
+              : this.t("CUỐC NÀY ỔN ÁP", "SOLID SAIGON RUN");
     el("result-title").textContent = title;
     el("result-score").textContent = result.score.toLocaleString();
     el("best-message").textContent = !saved
       ? this.t(
-          "Máy này chưa lưu được kỷ lục · vẫn lưu ảnh được",
-          "Couldn't save a local best · you can still save the card",
+          "Máy này không lưu được kỷ lục, nhưng ảnh kết quả vẫn lưu được.",
+          "Couldn't save the local best, but you can still save the image.",
         )
       : result.score > best
-        ? this.t("KỶ LỤC MỚI TRÊN MÁY NÀY ✦", "NEW BEST ON THIS DEVICE ✦")
-        : this.t("KỶ LỤC TRÊN MÁY NÀY · ", "BEST ON THIS DEVICE · ") +
+        ? this.t("Mới phá kỷ lục trên máy này ✦", "New best on this device ✦")
+        : this.t("Kỷ lục trên máy này: ", "Best on this device: ") +
           best.toLocaleString();
     el("result-grid").replaceChildren();
     for (const [label, value] of [
-      [this.t("TIỀN CƯỚC", "FARES"), result.money.toLocaleString() + " ₫"],
-      [this.t("NHỊP", "FLOW"), "×" + result.bestCombo],
-      [this.t("LÁCH XE", "NEAR MISSES"), result.nearMisses],
-      [this.t("CUỐC ĐÃ XONG", "DELIVERIES"), result.deliveries],
-      [this.t("QUÃNG ĐƯỜNG", "DISTANCE"), Math.round(result.distance) + " m"],
-      [this.t("VA CHẠM", "CRASHES"), result.crashes],
+      [this.t("TIỀN CUỐC", "FARES"), result.money.toLocaleString() + " ₫"],
+      [this.t("NHỊP TỐT NHẤT", "BEST RHYTHM"), "×" + result.bestCombo],
+      [this.t("LÁCH XE", "CLOSE PASSES"), result.nearMisses],
+      [this.t("CUỐC XONG", "RIDES DONE"), result.deliveries],
+      [this.t("ĐÃ CHẠY", "DISTANCE"), Math.round(result.distance) + " m"],
+      [this.t("VA QUẸT", "CRASHES"), result.crashes],
     ]) {
       const item = document.createElement("div"),
         strong = document.createElement("strong"),
@@ -398,7 +417,7 @@ export class UI {
       " · " +
       run.seed +
       " UTC · " +
-      this.t("ĐIỂM TRÊN MÁY NÀY", "LOCAL SCORE");
+      this.t("CHƠI TRÊN MÁY NÀY", "PLAYED ON THIS DEVICE");
     el("results").showModal();
   }
 }
