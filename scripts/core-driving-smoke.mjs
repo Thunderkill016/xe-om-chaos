@@ -48,7 +48,7 @@ async function releaseKeys(page, held) {
   held.clear();
 }
 
-function corridorWaypointsToStop(points, stop) {
+function nearestCorridorSegment(points, stop) {
   let best = { distance: Infinity, segment: 1 };
   for (let index = 1; index < points.length; index++) {
     const a = points[index - 1];
@@ -71,9 +71,22 @@ function corridorWaypointsToStop(points, stop) {
     const distance = Math.hypot(stop.x - x, stop.z - z);
     if (distance < best.distance) best = { distance, segment: index };
   }
+  return best;
+}
+
+function corridorWaypointsBetweenStops(points, start, end) {
+  const startProjection = nearestCorridorSegment(points, start);
+  const endProjection = nearestCorridorSegment(points, end);
+  assert.ok(
+    endProjection.segment >= startProjection.segment,
+    "corridor stops must follow the selected OSM road direction",
+  );
   return [
-    ...points.slice(0, best.segment).map(({ x, z }) => ({ x, z })),
-    { x: stop.x, z: stop.z, stop: true },
+    { x: start.x, z: start.z },
+    ...points
+      .slice(startProjection.segment, endProjection.segment)
+      .map(({ x, z }) => ({ x, z })),
+    { x: end.x, z: end.z, stop: true },
   ];
 }
 
@@ -269,8 +282,9 @@ try {
   );
   check("corridor pickup boards through the normal stop dwell rule", true);
 
-  const corridorPoints = corridorWaypointsToStop(
+  const corridorPoints = corridorWaypointsBetweenStops(
     REAL_HCM_CORRIDOR.points,
+    REAL_HCM_CORRIDOR_STOPS[0],
     REAL_HCM_CORRIDOR_STOPS[1],
   );
   let corridorWaypoint = 1;
