@@ -22,6 +22,7 @@ async function packageHtml(source, destination, prefix) {
 await packageHtml("index.html", path.join(target, "index.html"), "./");
 await packageHtml("en/index.html", path.join(target, "en/index.html"), "../");
 await cp("style.css", path.join(target, "style.css"));
+await cp("premium.css", path.join(target, "premium.css"));
 await cp("src", path.join(target, "src"), { recursive: true });
 for (const file of ["three.module.js", "three.core.js"])
   await cp(
