@@ -123,8 +123,10 @@ export class ChaosDirector {
     else if (!wanted) this.barrier.active = false;
     this.bus.active = this.active.has("bus");
     if (this.bus.active) {
-      const event = this.schedule.find((e) => e.id === "bus");
-      this.bus.x = -22 + clamp((run.time - event.start) / event.duration, 0, 1) * 44;
+      const busEvent = this.schedule.find((e) => e.id === "bus");
+      this.bus.x = busEvent
+        ? -22 + clamp((run.time - busEvent.start) / busEvent.duration, 0, 1) * 44
+        : -22;
     } else this.bus.x = -22;
   }
 }
