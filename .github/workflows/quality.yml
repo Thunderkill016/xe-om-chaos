@@ -22,8 +22,10 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Apply Vietnamese interactive voice pass
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/chatgpt/')
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
+          git fetch origin "$GITHUB_HEAD_REF"
+          git checkout -B "$GITHUB_HEAD_REF" "origin/$GITHUB_HEAD_REF"
           node scripts/vi-voice-pass.mjs
           npm run format
           if ! git diff --quiet; then
@@ -31,7 +33,7 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add index.html src tests docs
             git commit -m "Rewrite Vietnamese interactive voice"
-            git push origin HEAD:${GITHUB_REF_NAME}
+            git push origin "HEAD:$GITHUB_HEAD_REF"
           fi
       - name: Opening route diagnostic
         run: |
