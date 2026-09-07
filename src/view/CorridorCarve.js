@@ -5,7 +5,10 @@ import {
   realCorridorBuildingClearance,
 } from "../world/HcmCorridor.js";
 
-const LEGACY_VISUAL_CLEARANCE = Math.max(1.2, REAL_HCM_BUILDING_CLEARANCE - 0.4);
+const LEGACY_VISUAL_CLEARANCE = Math.max(
+  1.2,
+  REAL_HCM_BUILDING_CLEARANCE - 0.4,
+);
 const MIN_CARVE_TOP = 0.32;
 
 function worldYaw(parent) {
@@ -62,7 +65,18 @@ export function installLegacyCorridorCarve(SceneClass) {
   ) {
     if (overlapsPlayableCorridor(parent, x, y, z, w, h, d))
       return carvedMesh(this, colour, geometry);
-    return originalMesh.call(this, parent, colour, x, y, z, w, h, d, geometry);
+    return originalMesh.call(
+      this,
+      parent,
+      colour,
+      x,
+      y,
+      z,
+      w,
+      h,
+      d,
+      geometry,
+    );
   };
 
   return (view) => {
