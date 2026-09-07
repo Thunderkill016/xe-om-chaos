@@ -32,7 +32,10 @@ test("traffic varies between blocks while preserving headway and junction safety
         `${vehicle.paceAmplitude.toFixed(3)}:${vehicle.paceFrequency.toFixed(3)}:${vehicle.laneBias.toFixed(3)}:${vehicle.wanderAmplitude.toFixed(3)}`,
     ),
   );
-  assert.ok(profiles.size > traffic.length * 0.75, "drivers should not share one motion profile");
+  assert.ok(
+    profiles.size > traffic.length * 0.75,
+    "drivers should not share one motion profile",
+  );
 
   for (const vehicle of traffic) {
     if (vehicle.axis === "x")
@@ -51,7 +54,10 @@ test("traffic varies between blocks while preserving headway and junction safety
           ? Math.abs(vehicle.z - vehicle.lane)
           : Math.abs(vehicle.x - vehicle.lane);
       maxLateralVariation = Math.max(maxLateralVariation, lateral);
-      assert.ok(lateral < 0.55, `vehicle ${vehicle.id} wandered too far from its lane`);
+      assert.ok(
+        lateral < 0.55,
+        `vehicle ${vehicle.id} wandered too far from its lane`,
+      );
     }
 
     for (let i = 0; i < traffic.length; i++)
@@ -78,7 +84,10 @@ test("traffic varies between blocks while preserving headway and junction safety
         );
       }
   }
-  assert.ok(maxLateralVariation > 0.12, "traffic should visibly relax off exact lane centre");
+  assert.ok(
+    maxLateralVariation > 0.12,
+    "traffic should visibly relax off exact lane centre",
+  );
 
   const forwardSteps = new Set();
   for (const vehicle of traffic) {
