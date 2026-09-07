@@ -16,8 +16,8 @@ const ui = new UI(seed),
 if (params.has("v") && params.get("v") !== CONFIG.version) {
   el("start").disabled = true;
   el("welcome-best").textContent = ui.t(
-    "Mã thách đấu dùng phiên bản khác. Mở trang chủ để chạy hôm nay.",
-    "This challenge uses a different version. Open the home page for today’s run.",
+    "Mã thách đấu này thuộc bản game khác. Về trang chính để chạy cuốc hôm nay.",
+    "This challenge was made on a different game version. Head home for today’s run.",
   );
 }
 let run = new Run(seed),
@@ -32,8 +32,8 @@ try {
 } catch (error) {
   el("fatal").hidden = false;
   el("fatal").textContent = ui.t(
-    "Trình duyệt chưa mở được WebGL 2. Hãy bật tăng tốc phần cứng và tải lại.",
-    "WebGL 2 could not start. Enable hardware acceleration and reload.",
+    "Trình duyệt chưa chạy được WebGL 2. Bật tăng tốc phần cứng rồi tải lại trang.",
+    "WebGL 2 could not start. Enable hardware acceleration, then reload the page.",
   );
   console.error(error);
 }
@@ -48,7 +48,6 @@ async function begin() {
   accumulator = 0;
   input.reset();
   ui.begin();
-  // Audio failure is surfaced independently; an unavailable audio device must not stop riding.
   try {
     await audio.start();
   } catch (error) {
@@ -89,13 +88,8 @@ el("settings").addEventListener("close", () => {
   input.reset();
   saveSettings();
 });
-el("language").onchange = () => {
-  ui.language = el("language").value;
-  ui.localize();
-};
 function saveSettings() {
   const prefs = {
-    language: ui.language,
     volume: Number(el("volume").value) / 100,
     quality: el("quality").value,
     motion: el("motion").checked,
@@ -149,7 +143,7 @@ el("game").addEventListener("webglcontextlost", (event) => {
   pause();
   el("fatal").hidden = false;
   el("fatal").textContent = ui.t(
-    "Đang khôi phục hình ảnh. Lượt chơi đã được tạm dừng.",
+    "Đang khôi phục hình ảnh. Cuốc xe đã được tạm dừng.",
     "Restoring graphics. Your run is paused.",
   );
 });
@@ -161,7 +155,6 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) pause();
 });
 el("debug").hidden = !params.has("debug");
-// Mutable inspection hook only for explicit local debug sessions; local scores are unverified.
 if (params.has("debug"))
   Object.defineProperty(window, "xeom", {
     value: {
