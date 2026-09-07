@@ -44,12 +44,18 @@ try {
   });
   await page.waitForFunction(() => Boolean(window.xeom?.view));
   report.version = await page.evaluate(() => window.xeom.run.record.version);
+  const vietnameseStart = (await page.locator("#start").textContent())?.trim();
+  check(
+    "Vietnamese edition declares Vietnamese and exposes one start action",
+    (await page.locator("html").getAttribute("lang")) === "vi" &&
+      Boolean(vietnameseStart),
+  );
   await page.evaluate(() => {
     document.getElementById("debug").hidden = true;
   });
   await page.screenshot({ path: `${output}/menu.png` });
 
-  await page.getByRole("button", { name: "LÊN XE THÔI ↗" }).click();
+  await page.locator("#start").click();
   check(
     "start enters live gameplay",
     (await page.locator("#timer").isVisible()) &&
@@ -189,17 +195,14 @@ try {
   await international.goto(`${base}/en/?seed=2026-09-06`, {
     waitUntil: "networkidle",
   });
+  const englishStart = (await international.locator("#start").textContent())?.trim();
   check(
     "international edition is a separate English entry point",
     (await international.locator("html").getAttribute("lang")) === "en" &&
-      (await international
-        .getByRole("button", { name: "LET'S RIDE ↗" })
-        .isVisible()) &&
-      (await international
-        .getByRole("button", { name: "LÊN XE THÔI ↗" })
-        .count()) === 0,
+      Boolean(englishStart) &&
+      englishStart !== vietnameseStart,
   );
-  await international.getByRole("button", { name: "LET'S RIDE ↗" }).click();
+  await international.locator("#start").click();
   check(
     "international edition enters gameplay without runtime errors",
     (await international.locator("#timer").isVisible()) &&
