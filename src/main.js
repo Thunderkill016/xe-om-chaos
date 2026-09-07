@@ -33,8 +33,12 @@ let playing = false,
 let menuTime = 0;
 try {
   if (params.get("renderer") === "playcanvas") {
-    const { PlayCanvasScene } = await import("./view/PlayCanvasScene.js");
+    const [{ PlayCanvasScene }, { addAuthoredBaseMap }] = await Promise.all([
+      import("./view/PlayCanvasScene.js"),
+      import("./view/PlayCanvasBaseMap.js"),
+    ]);
     view = new PlayCanvasScene(el("game"));
+    addAuthoredBaseMap(view);
     document.documentElement.dataset.renderer = "playcanvas";
   } else {
     const finishLegacyCarve = installLegacyCorridorCarve(Scene);
