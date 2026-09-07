@@ -5,7 +5,10 @@ import { Run } from "../src/game/Run.js";
 import { openingRoutes } from "./evaluate-routes.mjs";
 
 const output = process.env.XEOM_OUTPUT || "output/core-driving";
-const base = (process.env.XEOM_URL || "http://127.0.0.1:4173").replace(/\/$/, "");
+const base = (process.env.XEOM_URL || "http://127.0.0.1:4173").replace(
+  /\/$/,
+  "",
+);
 await mkdir(output, { recursive: true });
 
 const report = {
@@ -27,14 +30,18 @@ const browser = await chromium.launch({
 });
 
 try {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+  });
   const page = await context.newPage();
   page.on("pageerror", (error) => report.errors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") report.errors.push(message.text());
   });
 
-  await page.goto(`${base}/?debug=1&seed=2026-09-06`, { waitUntil: "networkidle" });
+  await page.goto(`${base}/?debug=1&seed=2026-09-06`, {
+    waitUntil: "networkidle",
+  });
   await page.waitForFunction(() => Boolean(window.xeom?.view));
   report.version = await page.evaluate(() => window.xeom.run.record.version);
   await page.evaluate(() => {
@@ -69,7 +76,9 @@ try {
   check(
     "restart resets crash and score state",
     await page.evaluate(
-      () => window.xeom.run.stats.crashes === 0 && window.xeom.run.stats.score === 0,
+      () =>
+        window.xeom.run.stats.crashes === 0 &&
+        window.xeom.run.stats.score === 0,
     ),
   );
 
@@ -90,10 +99,14 @@ try {
     const target = route[waypoint];
     const p = state.p;
     const distance = Math.hypot(target.x - p.x, target.z - p.z);
-    const targetAngle = Math.atan2(target.x - p.x, target.z - p.z) - p.angle;
+    const targetAngle =
+      Math.atan2(target.x - p.x, target.z - p.z) - p.angle;
     const delta = Math.atan2(Math.sin(targetAngle), Math.cos(targetAngle));
 
-    if ((!target.stop && distance < 3) || (waypoint === 0 && state.phase === "dropoff")) {
+    if (
+      (!target.stop && distance < 3) ||
+      (waypoint === 0 && state.phase === "dropoff")
+    ) {
       waypoint += 1;
       continue;
     }
@@ -145,9 +158,18 @@ try {
   }));
   report.route = outcome;
 
-  check("Hẻm 26 is discovered through real browser steering", outcome.discoveredHem26);
-  check("pickup and dropoff complete through real browser controls", outcome.deliveries > 0);
-  check("browser reports no blocking console errors", report.errors.length === 0);
+  check(
+    "Hẻm 26 is discovered through real browser steering",
+    outcome.discoveredHem26,
+  );
+  check(
+    "pickup and dropoff complete through real browser controls",
+    outcome.deliveries > 0,
+  );
+  check(
+    "browser reports no blocking console errors",
+    report.errors.length === 0,
+  );
 
   await page.screenshot({ path: `${output}/after-route.png` });
   await context.close();
