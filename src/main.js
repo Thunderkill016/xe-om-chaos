@@ -4,6 +4,7 @@ import { Scene } from "./view/Scene.js";
 import { addDowntownCinematic } from "./view/Downtown.js";
 import { addRealHcmContext } from "./view/OsmContext.js";
 import { addPlayableHcmCorridor } from "./view/HcmCorridorView.js";
+import { installLegacyCorridorCarve } from "./view/CorridorCarve.js";
 import { Input } from "./platform/Input.js";
 import { Audio } from "./platform/Audio.js";
 import { UI, el } from "./platform/UI.js";
@@ -31,7 +32,12 @@ let playing = false,
   previous = performance.now();
 let menuTime = 0;
 try {
-  view = new Scene(el("game"));
+  const finishLegacyCarve = installLegacyCorridorCarve(Scene);
+  try {
+    view = new Scene(el("game"));
+  } finally {
+    if (view) finishLegacyCarve(view);
+  }
   addDowntownCinematic(view);
   addRealHcmContext(view);
   addPlayableHcmCorridor(view);
