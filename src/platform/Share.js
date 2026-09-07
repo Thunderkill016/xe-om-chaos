@@ -52,7 +52,11 @@ export function resultCard(result, language = "vi") {
   c.fillText("XE ÔM CHAOS", 70, 115);
   c.fillStyle = "#ff9664";
   c.font = "bold 24px Arial";
-  c.fillText(en ? "SAIGON · TODAY'S RUN" : "SÀI GÒN · CA CHẠY APP HÔM NAY", 73, 162);
+  c.fillText(
+    en ? "SAIGON · TODAY'S RUN" : "SÀI GÒN · CA CHẠY APP HÔM NAY",
+    73,
+    162,
+  );
   c.strokeStyle = "#c9d1b3";
   c.setLineDash([7, 9]);
   c.beginPath();

@@ -235,20 +235,14 @@ export class UI {
     else if (event.type === "pothole")
       text = this.t("Bánh trước vừa dính ổ gà.", "Pothole!");
     else if (event.text.includes("LÁCH ĐẸP"))
-      text = this.t(
-        "Bác tài vừa lách qua một khe đẹp.",
-        "Nice pass!",
-      );
+      text = this.t("Bác tài vừa lách qua một khe đẹp.", "Nice pass!");
     else if (event.text.includes("HẺM MASTER"))
       text = this.t(
         "Bác tài đi hẻm như người trong khu.",
         "You really know the alleys!",
       );
     else if (event.text.includes("MƯỢT"))
-      text = this.t(
-        "Khách phía sau đang ngồi khá êm.",
-        "Smooth!",
-      );
+      text = this.t("Khách phía sau đang ngồi khá êm.", "Smooth!");
     el("reaction").textContent = text + suffix;
     el("reaction").dataset.event = event.type;
     this.reactionUntil = time + 2.3;

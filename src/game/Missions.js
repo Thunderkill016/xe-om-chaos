@@ -27,7 +27,8 @@ export const PASSENGERS = [
     vi: "Sinh viên",
     en: "Student",
     line: "Em đi khu này hoài. Anh thấy hẻm nào thông thì quẹo vô, nhiều khi lẹ hơn đường lớn.",
-    subtitle: "I know this part of town. If a hẻm goes through, take it — it's often quicker than the main road.",
+    subtitle:
+      "I know this part of town. If a hẻm goes through, take it — it's often quicker than the main road.",
     fare: 12000,
     deadline: 48,
     colour: "#81b8c5",
@@ -37,7 +38,8 @@ export const PASSENGERS = [
     vi: "Khách khoái cảm giác mạnh",
     en: "Thrill seeker",
     line: "Em không ngại chạy nhanh đâu. Anh lách gọn thì em khoái, chứ đừng quẹt xe người ta nha.",
-    subtitle: "Speed doesn't scare me. Just keep the close passes clean and don't hit anybody.",
+    subtitle:
+      "Speed doesn't scare me. Just keep the close passes clean and don't hit anybody.",
     fare: 15000,
     deadline: 46,
     colour: "#e99880",
