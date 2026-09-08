@@ -38,7 +38,13 @@ function addClock(view, tower) {
   tower.addChild(face);
 
   const handMaterial = 0x273a37;
-  const minute = view.box("BEN_THANH_CLOCK_MINUTE", handMaterial, 0.11, 0.72, 0.08);
+  const minute = view.box(
+    "BEN_THANH_CLOCK_MINUTE",
+    handMaterial,
+    0.11,
+    0.72,
+    0.08,
+  );
   minute.setLocalPosition(0, 10.12, -3.29);
   tower.addChild(minute);
   const hour = view.box("BEN_THANH_CLOCK_HOUR", handMaterial, 0.58, 0.11, 0.08);
@@ -70,13 +76,25 @@ function addFrontArcade(view, market) {
     opening.setLocalPosition(x, 1.62, -7.62);
     market.addChild(opening);
 
-    const transom = view.box("BEN_THANH_ARCADE_TRANSOM", 0xb28c62, 2.15, 0.16, 0.2);
+    const transom = view.box(
+      "BEN_THANH_ARCADE_TRANSOM",
+      0xb28c62,
+      2.15,
+      0.16,
+      0.2,
+    );
     transom.setLocalPosition(x, 2.63, -7.74);
     market.addChild(transom);
   }
 
   for (const x of [-12.7, -9.65, -6.55, -3.45, 3.45, 6.55, 9.65, 12.7]) {
-    const column = view.box("BEN_THANH_ARCADE_COLUMN", stucco, 0.32, 3.65, 0.38);
+    const column = view.box(
+      "BEN_THANH_ARCADE_COLUMN",
+      stucco,
+      0.32,
+      3.65,
+      0.38,
+    );
     column.setLocalPosition(x, 1.82, -7.72);
     market.addChild(column);
   }
@@ -100,7 +118,13 @@ function addTower(view, market) {
   tower.addChild(upper);
 
   for (const x of [-2.62, 2.62]) {
-    const pilaster = view.box("BEN_THANH_TOWER_PILASTER", 0xb99c6d, 0.34, 10.9, 0.42);
+    const pilaster = view.box(
+      "BEN_THANH_TOWER_PILASTER",
+      0xb99c6d,
+      0.34,
+      10.9,
+      0.42,
+    );
     pilaster.setLocalPosition(x, 5.45, -2.83);
     tower.addChild(pilaster);
   }
@@ -117,13 +141,28 @@ function addTower(view, market) {
   portal.setLocalPosition(0, 2.12, -3.02);
   tower.addChild(portal);
 
-  const gateLintel = view.box("BEN_THANH_GATE_LINTEL", 0xb18c61, 4.15, 0.42, 0.3);
+  const gateLintel = view.box(
+    "BEN_THANH_GATE_LINTEL",
+    0xb18c61,
+    4.15,
+    0.42,
+    0.3,
+  );
   gateLintel.setLocalPosition(0, 4.12, -3.09);
   tower.addChild(gateLintel);
 
   addClock(view, tower);
 
-  pitchedRoof(view, tower, "BEN_THANH_TOWER_ROOF", 0x964f39, 6.9, 5.9, 11.72, 0.05);
+  pitchedRoof(
+    view,
+    tower,
+    "BEN_THANH_TOWER_ROOF",
+    0x964f39,
+    6.9,
+    5.9,
+    11.72,
+    0.05,
+  );
   const finial = view.primitive(
     "BEN_THANH_TOWER_FINIAL",
     "cylinder",
@@ -173,7 +212,16 @@ export function buildBenThanhLandmark(view) {
     market.addChild(wing);
   }
 
-  pitchedRoof(view, market, "BEN_THANH_MAIN_ROOF", 0x99543d, 29.4, 15.8, 5.28, 0);
+  pitchedRoof(
+    view,
+    market,
+    "BEN_THANH_MAIN_ROOF",
+    0x99543d,
+    29.4,
+    15.8,
+    5.28,
+    0,
+  );
   addFrontArcade(view, market);
   addTower(view, market);
   addMarketApron(view, market);

@@ -1,5 +1,6 @@
 import * as pc from "playcanvas";
 import { CONFIG } from "../game/config.js";
+import { buildBenThanhLandmark } from "./BenThanhLandmark.js";
 import {
   REAL_HCM_CORRIDOR,
   REAL_HCM_CORRIDOR_BUILDINGS,
@@ -107,13 +108,18 @@ export class PlayCanvasScene {
     const menuStart = REAL_HCM_CORRIDOR.points[0];
     const menuNext = REAL_HCM_CORRIDOR.points[1];
     const menuFrame = segmentFrame(menuStart, menuNext);
+    const landmark = this.benThanhAnchor;
+    const aheadX = menuStart.x + (menuFrame.dx / menuFrame.length) * 16;
+    const aheadZ = menuStart.z + (menuFrame.dz / menuFrame.length) * 16;
     this.menuCamera = {
-      x: menuStart.x - (menuFrame.dx / menuFrame.length) * 13,
-      y: 6.2,
-      z: menuStart.z - (menuFrame.dz / menuFrame.length) * 13,
-      tx: menuStart.x + (menuFrame.dx / menuFrame.length) * 22,
-      ty: 1.7,
-      tz: menuStart.z + (menuFrame.dz / menuFrame.length) * 22,
+      x:
+        menuStart.x + menuFrame.nx * 9 - (menuFrame.dx / menuFrame.length) * 10,
+      y: 7.1,
+      z:
+        menuStart.z + menuFrame.nz * 9 - (menuFrame.dz / menuFrame.length) * 10,
+      tx: landmark ? landmark.x * 0.58 + aheadX * 0.42 : aheadX,
+      ty: 4.1,
+      tz: landmark ? landmark.z * 0.58 + aheadZ * 0.42 : aheadZ,
     };
     this.camera.setPosition(
       this.menuCamera.x,
@@ -297,54 +303,7 @@ export class PlayCanvasScene {
   }
 
   buildBenThanhLandmark() {
-    const start = this.sampleRoad(1.5);
-    const side = -1;
-    const setback = REAL_HCM_CORRIDOR.shoulderWidth * 0.5 + 12;
-    const x = start.x + start.nx * setback * side;
-    const z = start.z + start.nz * setback * side;
-    const market = new pc.Entity("CHO_BEN_THANH");
-    market.setPosition(x, 0, z);
-    market.setEulerAngles(0, start.angle * DEG, 0);
-    this.world.addChild(market);
-
-    const hall = this.box("BEN_THANH_HALL", 0xd8c08e, 23, 5.2, 15);
-    hall.setLocalPosition(0, 2.6, 0);
-    market.addChild(hall);
-    const roof = this.primitive(
-      "BEN_THANH_ROOF",
-      "cone",
-      0xb86e4c,
-      [12.8, 3.4, 8.4],
-    );
-    roof.setLocalPosition(0, 6.2, 0);
-    roof.setLocalEulerAngles(0, 45, 0);
-    market.addChild(roof);
-
-    const tower = this.box("BEN_THANH_CLOCK_TOWER", 0xe0c99a, 5.2, 9.4, 5.2);
-    tower.setLocalPosition(0, 7.2, -8.3);
-    market.addChild(tower);
-    const towerRoof = this.primitive(
-      "BEN_THANH_TOWER_ROOF",
-      "cone",
-      0xa85d43,
-      [4.2, 3.2, 4.2],
-    );
-    towerRoof.setLocalPosition(0, 13.45, -8.3);
-    market.addChild(towerRoof);
-    const clock = this.primitive(
-      "BEN_THANH_CLOCK",
-      "cylinder",
-      0xf2e6c7,
-      [1.1, 0.12, 1.1],
-    );
-    clock.setLocalPosition(0, 9.3, -10.94);
-    clock.setLocalEulerAngles(90, 0, 0);
-    market.addChild(clock);
-    for (const xLocal of [-8.2, -4.1, 4.1, 8.2]) {
-      const arch = this.box("BEN_THANH_ENTRANCE", 0x3f6260, 2.7, 2.6, 0.18);
-      arch.setLocalPosition(xLocal, 1.65, -7.55);
-      market.addChild(arch);
-    }
+    return buildBenThanhLandmark(this);
   }
 
   buildNguyenHueEnd() {
