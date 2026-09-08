@@ -35,10 +35,22 @@ await patch("src/view/PlayCanvasScene.js", [
           0,
         );`,
   ],
-  [`        shop.setLocalPosition(0, 1.35, -2.48 * side);`, `        shop.setLocalPosition(0, 1.35, -2.48);`],
-  [`        sign.setLocalPosition(0, 2.95, -2.52 * side);`, `        sign.setLocalPosition(0, 2.95, -2.52);`],
-  [`        awning.setLocalPosition(0, 2.5, -2.76 * side);`, `        awning.setLocalPosition(0, 2.5, -2.76);`],
-  [`          windows.setLocalPosition(0, y, -2.47 * side);`, `          windows.setLocalPosition(0, y, -2.47);`],
+  [
+    `        shop.setLocalPosition(0, 1.35, -2.48 * side);`,
+    `        shop.setLocalPosition(0, 1.35, -2.48);`,
+  ],
+  [
+    `        sign.setLocalPosition(0, 2.95, -2.52 * side);`,
+    `        sign.setLocalPosition(0, 2.95, -2.52);`,
+  ],
+  [
+    `        awning.setLocalPosition(0, 2.5, -2.76 * side);`,
+    `        awning.setLocalPosition(0, 2.5, -2.76);`,
+  ],
+  [
+    `          windows.setLocalPosition(0, y, -2.47 * side);`,
+    `          windows.setLocalPosition(0, y, -2.47);`,
+  ],
 ]);
 
 await patch("src/view/BenThanhLandmark.js", [
@@ -51,13 +63,13 @@ await patch("src/view/BenThanhLandmark.js", [
 await patch("tests/hcm-corridor.test.js", [
   [
     `  assert.deepEqual(
-    new Set(corridorTraffic.map((vehicle) => vehicle.direction)),
+    new Set(corridorTraffic.map((vehicle) => vehicle.corridorDirection)),
     new Set([-1, 1]),
   );
 
   for (const time of [0, 3.2, 12.5, 29.75]) {`,
     `  assert.deepEqual(
-    new Set(corridorTraffic.map((vehicle) => vehicle.direction)),
+    new Set(corridorTraffic.map((vehicle) => vehicle.corridorDirection)),
     new Set([-1, 1]),
   );
 
