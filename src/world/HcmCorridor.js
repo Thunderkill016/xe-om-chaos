@@ -380,53 +380,49 @@ function selectCorridor() {
     SAIGON_VERTICAL_SLICE.end.lat,
     SAIGON_VERTICAL_SLICE.end.lon,
   );
-  const path = findOsmRoadPath(requestedStart, requestedEnd);
-  const sourcePoints = simplifySourceRoute(path.points);
-  const transformed = transformRoute(sourcePoints);
-  const gamePoints = transformed.points;
-  const sourceLength = polylineLength(sourcePoints);
-  const gameLength = polylineLength(
-    gamePoints.map((point) => [point.x, point.z]),
-  );
-  const sourceWidth = Math.max(
-    6,
-    ...path.edges.map((edge) => Number(edge.width) || 0),
-  );
-  const typeCounts = new Map();
-  for (const edge of path.edges)
-    typeCounts.set(edge.type, (typeCounts.get(edge.type) ?? 0) + 1);
+  const found = findOsmRoadPath(requestedStart, requestedEnd);
+  const simplified = simplifySourceRoute(found.points);
+  const sourceLength = polylineLength(simplified);
+  if (sourceLength < 100)
+    throw new Error("Bến Thành -> Nguyễn Huệ OSM route is unexpectedly short");
+  const transformed = transformRoute(simplified);
+  const widths = found.edges
+    .map((edge) => Number(edge.width))
+    .filter(Number.isFinite);
+  const sourceTypes = [...new Set(found.edges.map((edge) => edge.type))];
   const sourceType =
-    [...typeCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ??
-    "secondary";
-  const width = clamp(sourceWidth * PLAY_SCALE, 4.8, 6.4);
+    sourceTypes.length === 1 ? sourceTypes[0] : sourceTypes.join("+");
+  const widthSource = widths.length
+    ? widths.reduce((sum, width) => sum + width, 0) / widths.length
+    : 8;
   return {
     id: "hcm-osm-corridor-1",
-    name: SAIGON_VERTICAL_SLICE.name,
     source: "OpenStreetMap",
-    sourceGeneratedAt: HCMC_OSM_DATA.generatedAt,
+    attribution: HCMC_OSM_DATA.attribution,
     sourceType,
-    sourceWidth,
     sourceLength,
+    width: clamp(widthSource * PLAY_SCALE, 4.8, 6.4),
+    shoulderWidth: clamp(widthSource * PLAY_SCALE + 4.2, 9.6, 12.4),
+    points: transformed.points,
     sourceOrigin: transformed.sourceOrigin,
     sourceHeading: transformed.sourceHeading,
     transformCos: transformed.c,
     transformSin: transformed.s,
-    scale: PLAY_SCALE,
-    width,
-    shoulderWidth: width + 3.4,
-    length: gameLength,
-    points: gamePoints,
-    sourcePointCount: path.points.length,
-    sourceSnapStartMetres: path.startSnap.distance,
-    sourceSnapEndMetres: path.endSnap.distance,
-    sourceConnectedComponentSize: path.connectedComponentSize,
-    georeferencedTo: SAIGON_VERTICAL_SLICE.id,
-    realWorldStart: SAIGON_VERTICAL_SLICE.start,
-    realWorldEnd: SAIGON_VERTICAL_SLICE.end,
+    gameLength: sourceLength * PLAY_SCALE,
+    startSnapMeters: found.startSnap.distance,
+    endSnapMeters: found.endSnap.distance,
+    connectedComponentSize: found.connectedComponentSize,
   };
 }
 
-export const REAL_HCM_CORRIDOR = Object.freeze(selectCorridor());
+const corridor = selectCorridor();
+export const REAL_HCM_CORRIDOR = Object.freeze({
+  ...corridor,
+  length: corridor.gameLength,
+  points: Object.freeze(
+    corridor.points.map((point) => Object.freeze({ ...point })),
+  ),
+});
 
 function sampleRoute(distanceValue) {
   const distance = clamp(distanceValue, 0, REAL_HCM_CORRIDOR.length);
@@ -630,7 +626,7 @@ export const WORLD_STOPS = Object.freeze([
 
 export function makeWorldTraffic(rng, regularCount, rushCount = 0) {
   const traffic = makeMapTraffic(rng, regularCount, rushCount);
-  const corridorCount = Math.min(4, regularCount);
+  const corridorCount = Math.min(2, regularCount);
   const first = regularCount - corridorCount;
   for (let id = first; id < regularCount; id++) {
     /** @type {any} */
