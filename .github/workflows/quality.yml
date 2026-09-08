@@ -18,6 +18,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Canonical facade format probe
+        run: npx prettier --write src/view/PlayCanvasBaseMap.js
+      - name: Upload canonical facade file
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-playcanvas-facade
+          path: src/view/PlayCanvasBaseMap.js
+          if-no-files-found: error
       - name: Verify committed HCMC context exists
         run: |
           test -s src/world/hcm-downtown-data.js
