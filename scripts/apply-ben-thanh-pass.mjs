@@ -35,7 +35,7 @@ if (methodStart < 0 || nextMethod < 0) {
 }
 source =
   source.slice(0, methodStart) +
-  '  buildBenThanhLandmark() {\n    return buildBenThanhLandmark(this);\n  }\n' +
+  "  buildBenThanhLandmark() {\n    return buildBenThanhLandmark(this);\n  }\n" +
   source.slice(nextMethod);
 
 const oldCamera = `    const menuStart = REAL_HCM_CORRIDOR.points[0];
