@@ -102,6 +102,18 @@ test("a readable pair of live traffic vehicles follows the OSM corridor in both 
     new Set([-1, 1]),
   );
 
+  const initialPoses = corridorTraffic.map((vehicle) =>
+    worldTrafficPose(vehicle, 0),
+  );
+  assert.ok(
+    Math.hypot(
+      initialPoses[0].x - initialPoses[1].x,
+      initialPoses[0].z - initialPoses[1].z,
+    ) >
+      REAL_HCM_CORRIDOR.length * 0.3,
+    "opposing corridor traffic must start spatially separated instead of forming an artificial choke point",
+  );
+
   for (const time of [0, 3.2, 12.5, 29.75]) {
     for (const vehicle of corridorTraffic) {
       worldTrafficPose(vehicle, time);

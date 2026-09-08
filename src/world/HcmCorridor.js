@@ -639,9 +639,12 @@ export function makeWorldTraffic(rng, regularCount, rushCount = 0) {
     vehicle.lane = slot % 2 === 0 ? -1 : 1;
     vehicle.kind =
       slot % 3 === 0 ? "car" : slot % 3 === 1 ? "bike" : "delivery";
-    vehicle.corridorDistance =
-      ((slot + 0.5) / corridorCount) * REAL_HCM_CORRIDOR.length;
+    const physicalProgress = (slot + 0.5) / corridorCount;
     vehicle.corridorDirection = slot % 2 === 0 ? 1 : -1;
+    vehicle.corridorDistance =
+      vehicle.corridorDirection > 0
+        ? physicalProgress * REAL_HCM_CORRIDOR.length
+        : (1 - physicalProgress) * REAL_HCM_CORRIDOR.length;
     vehicle.speed = 4.8 + rng() * 1.7;
     vehicle.desiredSpeed = vehicle.speed;
     vehicle.active = true;

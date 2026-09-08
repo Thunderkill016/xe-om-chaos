@@ -199,7 +199,7 @@ export function buildBenThanhLandmark(view) {
 
   const market = new pc.Entity("CHO_BEN_THANH");
   market.setPosition(x, 0, z);
-  market.setEulerAngles(0, start.angle * DEG, 0);
+  market.setEulerAngles(0, (start.angle + Math.PI * 0.5) * DEG, 0);
   view.world.addChild(market);
 
   const hall = view.box("BEN_THANH_MAIN_HALL", 0xd3b67e, 28.5, 4.7, 15.1);

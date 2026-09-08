@@ -252,7 +252,7 @@ export class PlayCanvasScene {
         const z = point.z + point.nz * setback * side;
         const group = new pc.Entity(`LE_LOI_SHOPHOUSE_${block}_${side}`);
         group.setPosition(x, 0, z);
-        group.setEulerAngles(0, point.angle * DEG, 0);
+        group.setEulerAngles(0, (point.angle - side * Math.PI * 0.5) * DEG, 0);
         this.world.addChild(group);
 
         const palette = [0xd0b991, 0xc98c73, 0xa4aa95, 0xd8c9aa, 0x829b9e];
@@ -275,7 +275,7 @@ export class PlayCanvasScene {
           0.42,
           0.02,
         );
-        shop.setLocalPosition(0, 1.35, -2.48 * side);
+        shop.setLocalPosition(0, 1.35, -2.48);
         group.addChild(shop);
         const sign = this.box(
           "VIETNAMESE_SHOP_SIGN",
@@ -284,7 +284,7 @@ export class PlayCanvasScene {
           0.55,
           0.18,
         );
-        sign.setLocalPosition(0, 2.95, -2.52 * side);
+        sign.setLocalPosition(0, 2.95, -2.52);
         group.addChild(sign);
         const awning = this.box(
           "SHOP_AWNING",
@@ -293,7 +293,7 @@ export class PlayCanvasScene {
           0.12,
           0.72,
         );
-        awning.setLocalPosition(0, 2.5, -2.76 * side);
+        awning.setLocalPosition(0, 2.5, -2.76);
         group.addChild(awning);
         for (let y = 4.35; y < height - 0.8; y += 2.7) {
           const windows = this.box(
@@ -305,7 +305,7 @@ export class PlayCanvasScene {
             0.5,
             0.01,
           );
-          windows.setLocalPosition(0, y, -2.47 * side);
+          windows.setLocalPosition(0, y, -2.47);
           group.addChild(windows);
         }
       }
