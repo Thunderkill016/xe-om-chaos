@@ -7,7 +7,7 @@ export const EXPERIENTIAL_CONFIG = {
   baseURL: "https://api.experientiallabs.ai/v1",
   model: "gpt-6-astra",
   envKeyName: "EXPLABS_API_KEY",
-  reasoningEffort: "xhigh",
+  reasoningEffort: "medium",
 };
 
 /**
@@ -38,7 +38,7 @@ export function getApiKey() {
  * @param {string} [options.apiKey] - Optional override key
  * @param {string} [options.baseURL] - Base URL (defaults to https://api.experientiallabs.ai/v1)
  * @param {string} [options.model] - Model id (defaults to gpt-6-astra)
- * @param {string} [options.reasoning_effort] - Reasoning effort (e.g. 'xhigh')
+ * @param {string} [options.reasoning_effort] - Reasoning effort override
  */
 export function createLLMClient(options = {}) {
   const baseURL = options.baseURL || EXPERIENTIAL_CONFIG.baseURL;
