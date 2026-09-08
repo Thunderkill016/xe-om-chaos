@@ -10,6 +10,24 @@ if (!source.includes('from "./BenThanhLandmark.js"')) {
   );
 }
 
+if (!source.includes("this.benThanhAnchor = {")) {
+  source = source.replace(
+    "    this.materials = new Map();\n",
+    `    this.materials = new Map();
+    this.benThanhAnchor = {
+      x: 0,
+      z: 0,
+      roadX: 0,
+      roadZ: 0,
+      tx: 0,
+      tz: 1,
+      nx: -1,
+      nz: 0,
+    };
+`,
+  );
+}
+
 const methodStart = source.indexOf("  buildBenThanhLandmark() {");
 const nextMethod = source.indexOf("\n  buildNguyenHueEnd() {", methodStart);
 if (methodStart < 0 || nextMethod < 0) {
@@ -48,9 +66,9 @@ const newCamera = `    const menuStart = REAL_HCM_CORRIDOR.points[0];
         menuStart.z +
         menuFrame.nz * 9 -
         (menuFrame.dz / menuFrame.length) * 10,
-      tx: landmark ? landmark.x * 0.58 + aheadX * 0.42 : aheadX,
+      tx: landmark.x * 0.58 + aheadX * 0.42,
       ty: 4.1,
-      tz: landmark ? landmark.z * 0.58 + aheadZ * 0.42 : aheadZ,
+      tz: landmark.z * 0.58 + aheadZ * 0.42,
     };
 `;
 if (source.includes(oldCamera)) source = source.replace(oldCamera, newCamera);
