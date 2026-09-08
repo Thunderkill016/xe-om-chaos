@@ -401,6 +401,7 @@ function selectCorridor() {
     attribution: HCMC_OSM_DATA.attribution,
     sourceType,
     sourceLength,
+    scale: PLAY_SCALE,
     width: clamp(widthSource * PLAY_SCALE, 4.8, 6.4),
     shoulderWidth: clamp(widthSource * PLAY_SCALE + 4.2, 9.6, 12.4),
     points: transformed.points,
