@@ -1,8 +1,12 @@
 import * as pc from "playcanvas";
 
 const CAR_PALETTE = [0xb99d79, 0x6c8588, 0xc36f54, 0x4f666c, 0xd0c5ad];
-const RIDER_PALETTE = [0x3f6f75, 0xd06f47, 0x5e735b, 0xb48a5d, 0x596581];
-const HELMET_PALETTE = [0x202c2d, 0xe5dfcf, 0xc95f43, 0x557477, 0x866c58];
+const RIDER_PALETTE = [
+  0x3f6f75, 0xd06f47, 0x5e735b, 0xb48a5d, 0x596581,
+];
+const HELMET_PALETTE = [
+  0x202c2d, 0xe5dfcf, 0xc95f43, 0x557477, 0x866c58,
+];
 
 function addBox(
   view,
@@ -49,7 +53,8 @@ function addPrimitive(
 
 function paletteIndex(name, length) {
   let hash = 2166136261;
-  for (const char of name) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  for (const char of name)
+    hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
   return (hash >>> 0) % length;
 }
 
@@ -460,10 +465,14 @@ export function installPlayCanvasVehicleVisualPass(PlayCanvasScene) {
     );
   };
 
-  Object.defineProperty(PlayCanvasScene.prototype, "__vehicleVisualPassInstalled", {
-    value: true,
-    configurable: false,
-    enumerable: false,
-    writable: false,
-  });
+  Object.defineProperty(
+    PlayCanvasScene.prototype,
+    "__vehicleVisualPassInstalled",
+    {
+      value: true,
+      configurable: false,
+      enumerable: false,
+      writable: false,
+    },
+  );
 }
