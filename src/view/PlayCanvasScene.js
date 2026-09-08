@@ -41,6 +41,16 @@ export class PlayCanvasScene {
     this.fps = 60;
     this.frameMs = 16.7;
     this.materials = new Map();
+    this.benThanhAnchor = {
+      x: 0,
+      z: 0,
+      roadX: 0,
+      roadZ: 0,
+      tx: 0,
+      tz: 1,
+      nx: -1,
+      nz: 0,
+    };
     this.effects = { particleLife: [] };
     this.renderer = {
       info: { render: { calls: 0, triangles: 0 } },
