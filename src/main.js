@@ -33,10 +33,16 @@ let playing = false,
 let menuTime = 0;
 try {
   if (params.get("renderer") === "playcanvas") {
-    const [{ PlayCanvasScene }, { addAuthoredBaseMap }] = await Promise.all([
+    const [
+      { PlayCanvasScene },
+      { addAuthoredBaseMap },
+      { installPlayCanvasVehicleVisualPass },
+    ] = await Promise.all([
       import("./view/PlayCanvasScene.js"),
       import("./view/PlayCanvasBaseMap.js"),
+      import("./view/PlayCanvasVehicleVisualPass.js"),
     ]);
+    installPlayCanvasVehicleVisualPass(PlayCanvasScene);
     view = new PlayCanvasScene(el("game"));
     addAuthoredBaseMap(view);
     document.documentElement.dataset.renderer = "playcanvas";
