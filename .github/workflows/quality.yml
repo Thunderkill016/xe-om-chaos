@@ -26,7 +26,7 @@ jobs:
       - name: Apply Bến Thành visual pass
         run: |
           node scripts/apply-ben-thanh-pass.mjs
-          npx prettier --write src/view/PlayCanvasScene.js src/view/BenThanhLandmark.js
+          npx prettier --write src/view/PlayCanvasScene.js src/view/BenThanhLandmark.js scripts/apply-ben-thanh-pass.mjs
       - name: Commit canonical landmark integration
         if: github.event_name == 'push'
         run: |
@@ -35,7 +35,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/view/PlayCanvasScene.js src/view/BenThanhLandmark.js
+          git add src/view/PlayCanvasScene.js src/view/BenThanhLandmark.js scripts/apply-ben-thanh-pass.mjs
           git commit -m "Integrate recognizable Ben Thanh landmark"
           git push
       - name: Verify committed HCMC context exists
