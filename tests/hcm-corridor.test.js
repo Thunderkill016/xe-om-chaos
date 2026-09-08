@@ -87,7 +87,7 @@ test("OSM building footprints preserve the whole road and camera corridor", () =
   }
 });
 
-test("a bounded share of live traffic follows the OSM corridor in both directions", () => {
+test("a readable pair of live traffic vehicles follows the OSM corridor in both directions", () => {
   const traffic = makeWorldTraffic(
     random("hcm-corridor-traffic"),
     CONFIG.trafficCount,
@@ -96,9 +96,9 @@ test("a bounded share of live traffic follows the OSM corridor in both direction
   const corridorTraffic = traffic.filter(
     (vehicle) => vehicle.route === REAL_HCM_CORRIDOR.id,
   );
-  assert.equal(corridorTraffic.length, Math.min(4, CONFIG.trafficCount));
+  assert.equal(corridorTraffic.length, Math.min(2, CONFIG.trafficCount));
   assert.deepEqual(
-    new Set(corridorTraffic.map((vehicle) => vehicle.direction)),
+    new Set(corridorTraffic.map((vehicle) => vehicle.corridorDirection)),
     new Set([-1, 1]),
   );
 
