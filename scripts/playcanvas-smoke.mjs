@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
+import { REAL_HCM_CORRIDOR_STOPS } from "../src/world/HcmCorridor.js";
 
 const output = process.env.XEOM_OUTPUT || "output/playcanvas";
 const base = (process.env.XEOM_URL || "http://127.0.0.1:4173").replace(
@@ -121,6 +122,37 @@ try {
   );
 
   await page.screenshot({ path: `${output}/playcanvas-live.png` });
+
+  const corridorEvidence = await page.evaluate((stops) => {
+    const start = stops[0];
+    const end = stops[1];
+    const p = window.xeom.run.player;
+    p.x = start.x;
+    p.z = start.z;
+    p.vx = 0;
+    p.vz = 0;
+    p.speed = 0;
+    p.angle = Math.atan2(end.x - start.x, end.z - start.z);
+    return {
+      x: p.x,
+      z: p.z,
+      targetDistance: Math.hypot(end.x - p.x, end.z - p.z),
+      benThanh: Boolean(window.xeom.view.app.root.findByName("CHO_BEN_THANH")),
+      cityHall: Boolean(
+        window.xeom.view.app.root.findByName("SAIGON_CITY_HALL_SILHOUETTE"),
+      ),
+    };
+  }, REAL_HCM_CORRIDOR_STOPS);
+  await page.waitForTimeout(350);
+  report.corridorEvidence = corridorEvidence;
+  check(
+    "PlayCanvas visual evidence can be framed from the real Bến Thành corridor",
+    corridorEvidence.targetDistance > 10 &&
+      corridorEvidence.benThanh &&
+      corridorEvidence.cityHall,
+  );
+  await page.screenshot({ path: `${output}/playcanvas-hcm-corridor.png` });
+
   await context.close();
 } catch (error) {
   report.failure = String(error);
