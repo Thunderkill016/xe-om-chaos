@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const types = {
   ".html": "text/html",
   ".js": "text/javascript",
+  ".mjs": "text/javascript",
   ".css": "text/css",
   ".json": "application/json",
   ".png": "image/png",

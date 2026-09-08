@@ -1,0 +1,72 @@
+name: quality
+
+on:
+  push:
+    branches:
+      - main
+      - "chatgpt/**"
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Verify committed HCMC context exists
+        run: |
+          test -s src/world/hcm-downtown-data.js
+          grep -q "OpenStreetMap contributors" src/world/hcm-downtown-data.js
+          grep -q "HCMC_OSM_DATA" src/world/hcm-downtown-data.js
+      - name: Opening route diagnostic
+        run: |
+          node --input-type=module -e 'import { driveOpeningRoute } from "./scripts/evaluate-routes.mjs"; const { run, measurement } = driveOpeningRoute("2026-09-06", "hem26"); console.log(JSON.stringify({ measurement, crashes: run.moments.filter((m) => m.type === "crash") }, null, 2));'
+      - run: npm run quality
+      - name: Package both language editions
+        run: npm run package
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Start local static server
+        run: |
+          npm start > /tmp/xeom-server.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/xeom-server.log
+          exit 1
+      - name: PlayCanvas renderer smoke
+        env:
+          XEOM_OUTPUT: output/playcanvas
+        run: node scripts/playcanvas-smoke.mjs
+      - name: Real browser core-driving smoke
+        env:
+          XEOM_OUTPUT: output/core-driving
+        run: node scripts/core-driving-smoke.mjs
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-smoke
+          path: |
+            output/core-driving
+            output/playcanvas
+          if-no-files-found: error

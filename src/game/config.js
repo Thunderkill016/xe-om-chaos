@@ -1,5 +1,5 @@
 export const CONFIG = Object.freeze({
-  version: "saigon-v3",
+  version: "saigon-v11",
   step: 1 / 60,
   runSeconds: 180,
   acceleration: 15,
@@ -17,8 +17,10 @@ export const CONFIG = Object.freeze({
   nearMissRadius: 2.6,
   nearMissSpeed: 9,
   nearMissCooldown: 8,
-  trafficCount: 42,
-  rushCount: 16,
+  // Two baseline vehicles per straight stream. Rush hour activates the third
+  // pre-spaced slot instead of dumping extra vehicles into arbitrary gaps.
+  trafficCount: 24,
+  rushCount: 12,
   recordHz: 10,
   threadWindow: 0.6, // Two opposite-side safe passes inside one readable manoeuvre.
   threadBoost: 0.25,

@@ -1,10 +1,15 @@
 import { CONFIG, clamp, random, distance } from "./config.js";
 import {
+  AVENUES,
   surface,
-  makeTraffic,
-  trafficPose,
   hiddenLaneAt,
+  vehicleClearance,
 } from "../world/map.js";
+import {
+  makeWorldTraffic,
+  worldCollisionSurface,
+  worldTrafficPose,
+} from "../world/HcmCorridor.js";
 import { Missions } from "./Missions.js";
 import { ChaosDirector } from "./ChaosDirector.js";
 
@@ -58,9 +63,10 @@ export class Run {
     this.flow = { combo: 1, actions: 0, energy: 0, idle: 0 };
     this.missions = new Missions(random(seed + ":missions"));
     this.director = new ChaosDirector(seed);
-    this.traffic = makeTraffic(
+    this.traffic = makeWorldTraffic(
       random(seed + ":traffic"),
-      CONFIG.trafficCount + CONFIG.rushCount,
+      CONFIG.trafficCount,
+      CONFIG.rushCount,
     );
     this.events = [];
     this.moments = [];
@@ -85,15 +91,12 @@ export class Run {
     this.discoveredLanes = new Set();
     this.reactionCooldown = 0;
     this.traffic.forEach((v) => {
-      trafficPose(v, 0);
-      // A deterministic clear start gives new players time to learn throttle and brake.
-      while (
-        distance(v, this.player) < 18 ||
-        distance(v, this.missions.pickup) < 9
-      ) {
-        v.phase = (v.phase + 32) % 288;
-        trafficPose(v, 0);
-      }
+      worldTrafficPose(v, 0);
+      // Preserve stream spacing. Vehicles that would start on top of the rider or pickup
+      // remain temporarily inactive instead of being individually re-phased into another car.
+      v.spawnBlocked =
+        distance(v, this.player) < 18 || distance(v, this.missions.pickup) < 9;
+      v.active = v.id < CONFIG.trafficCount && !v.spawnBlocked;
     });
     this.player.immune = 3;
   }
@@ -167,6 +170,7 @@ export class Run {
       let replies = 0;
       for (const vehicle of this.traffic)
         if (vehicle.active && distance(p, vehicle) < 17) {
+          vehicle.honkedAt = this.time;
           vehicle.honkedUntil = this.time + 1.4;
           replies++;
         }
@@ -208,14 +212,14 @@ export class Run {
       p.vz += (Math.cos(p.angle) * p.speed - p.vz) * dt * grip;
       const nx = p.x + p.vx * dt,
         nz = p.z + p.vz * dt;
-      if (surface(nx, nz, CONFIG.radius) !== "wall") {
+      if (worldCollisionSurface(nx, nz, CONFIG.radius) !== "wall") {
         this.stats.distance += Math.hypot(nx - p.x, nz - p.z);
         p.x = nx;
         p.z = nz;
       } else {
         // Slide along a wall and retain steering so no recovery can trap the player.
-        if (surface(nx, p.z, CONFIG.radius) !== "wall") p.x = nx;
-        if (surface(p.x, nz, CONFIG.radius) !== "wall") p.z = nz;
+        if (worldCollisionSurface(nx, p.z, CONFIG.radius) !== "wall") p.x = nx;
+        if (worldCollisionSurface(p.x, nz, CONFIG.radius) !== "wall") p.z = nz;
         if (p.speed > 7) this.crash();
         else {
           p.speed *= 0.92;
@@ -226,28 +230,85 @@ export class Run {
     }
     this.stats.maxSpeed = Math.max(this.stats.maxSpeed, p.speed);
     for (const v of this.traffic) {
-      v.active = v.id < CONFIG.trafficCount || this.rush;
-      trafficPose(v, this.time);
-      if (!v.active) continue;
-      const d = distance(v, p);
-      if (d < CONFIG.radius + v.radius && p.immune === 0 && p.speed > 3) {
+      worldTrafficPose(v, this.time);
+      const sideX = Math.cos(v.angle),
+        sideZ = -Math.sin(v.angle),
+        previousAvoid = v.avoidOffset ?? 0;
+      // trafficPose owns the base stream path. Reapply the persistent lateral
+      // offset before deciding this frame's target so NPCs do not snap back to
+      // lane centre every tick.
+      if (previousAvoid) {
+        v.x += sideX * previousAvoid;
+        v.z += sideZ * previousAvoid;
+      }
+
+      const enabled = v.id < CONFIG.trafficCount || this.rush;
+      if (
+        v.spawnBlocked &&
+        distance(v, p) > 18 &&
+        distance(v, this.missions.pickup) > 9
+      )
+        v.spawnBlocked = false;
+      v.active = enabled && !v.spawnBlocked;
+      if (!v.active) {
+        v.avoidOffset = 0;
+        continue;
+      }
+
+      // Keep normal traffic disciplined. Only a nearly-stopped rider can make a
+      // nearby NPC flow around them, and never while the NPC is inside a junction
+      // core. The offset eases in and out instead of teleporting sideways.
+      let avoidTarget = 0;
+      if (v.axis && p.speed < 4 && p.recovery === 0) {
+        const travel = v.axis === "x" ? v.x : v.z;
+        const inJunction = AVENUES.some((road) => Math.abs(travel - road) < 8);
+        if (!inJunction) {
+          const dx = p.x - v.x,
+            dz = p.z - v.z,
+            forwardX = Math.sin(v.angle),
+            forwardZ = Math.cos(v.angle),
+            ahead = dx * forwardX + dz * forwardZ,
+            lateral = dx * sideX + dz * sideZ;
+          if (ahead > -1 && ahead < 9 && Math.abs(lateral) < 2.4) {
+            const maxOffset =
+              v.kind === "car" ? 0.55 : v.kind === "delivery" ? 0.8 : 1.05;
+            const urgency = clamp((9 - Math.max(0, ahead)) / 9, 0, 1);
+            const side =
+              Math.abs(lateral) > 0.2 ? -Math.sign(lateral) : v.id % 2 ? 1 : -1;
+            avoidTarget = maxOffset * urgency * side;
+          }
+        }
+      }
+      const avoidRate = avoidTarget === 0 ? 3 : 5;
+      const nextAvoid =
+        previousAvoid +
+        (avoidTarget - previousAvoid) * Math.min(1, dt * avoidRate);
+      const avoidDelta = nextAvoid - previousAvoid;
+      v.avoidOffset = Math.abs(nextAvoid) < 0.001 ? 0 : nextAvoid;
+      v.x += sideX * avoidDelta;
+      v.z += sideZ * avoidDelta;
+
+      const clearance = vehicleClearance(v, p);
+      if (clearance < CONFIG.radius && p.immune === 0) {
         this.crash();
         v.near = false;
         v.closest = Infinity;
         v.lastNear = this.time;
       } else if (
-        d < CONFIG.nearMissRadius + v.radius &&
+        clearance < CONFIG.nearMissRadius &&
         p.speed > CONFIG.nearMissSpeed &&
         p.immune === 0 &&
         this.time - v.lastNear > CONFIG.nearMissCooldown
       ) {
         v.near = true;
-        if (d < v.closest)
+        if (clearance < v.closest)
           v.nearSide = Math.sign(
             (v.x - p.x) * Math.cos(p.angle) - (v.z - p.z) * Math.sin(p.angle),
           );
-        v.closest = Math.min(v.closest, d);
-      } else if (v.near && d > CONFIG.nearMissRadius + v.radius + 1) {
+        v.closest = Math.min(v.closest, clearance);
+      } else if (v.near && clearance > CONFIG.nearMissRadius) {
+        // The cooldown already prevents jitter-farming. End the manoeuvre as soon
+        // as the rider has genuinely cleared the same geometric near-miss zone.
         if (p.immune === 0) {
           this.stats.nearMisses++;
           this.missions.rideNear++;

@@ -3,6 +3,9 @@ export const ALLEYS = [-36, 36];
 export const EXTENT = 89;
 export const ROAD_HALF = 7;
 export const ALLEY_HALF = 2.5;
+const SIDEWALK_HALF = 10.5;
+const ALLEY_SHOULDER_HALF = 4.6;
+
 // A hand-authored dogleg between two streets. Its courtyard replaces a building
 // lot; rendering and collision share this path so the shortcut is actually usable.
 export const HIDDEN_LANES = [
@@ -18,6 +21,7 @@ export const HIDDEN_LANES = [
     ],
   },
 ];
+
 export function segmentDistance(x, z, a, b) {
   const dx = b.x - a.x,
     dz = b.z - a.z;
@@ -27,6 +31,7 @@ export function segmentDistance(x, z, a, b) {
   );
   return Math.hypot(x - a.x - dx * t, z - a.z - dz * t);
 }
+
 export function hiddenLaneAt(x, z, margin = 0) {
   return HIDDEN_LANES.find((lane) =>
     lane.points
@@ -37,6 +42,7 @@ export function hiddenLaneAt(x, z, margin = 0) {
       ),
   );
 }
+
 export const STOPS = [
   // Board before the hẻm entrance so choosing it never requires a U-turn.
   { x: 3, z: -30, name: "CÀ PHÊ MÂY NHỎ" },
@@ -49,30 +55,127 @@ export const STOPS = [
   },
   { x: -3, z: 58, name: "CHUNG CƯ NẮNG" },
 ];
+
+// The city renderer uses the same deterministic block layout. These rectangles
+// represent the large visible masses that should actually stop the bike. Low
+// street furniture stays forgiving on purpose; the old implementation treated
+// every centimetre outside a painted road as an invisible wall.
+const BLOCK_STARTS = [-65, -33, 7, 39];
+export const BUILDING_RECTS = [];
+export const VISIBLE_LOT_RECTS = [];
+for (let ix = 0; ix < BLOCK_STARTS.length; ix++)
+  for (let iz = 0; iz < BLOCK_STARTS.length; iz++) {
+    const x0 = BLOCK_STARTS[ix],
+      z0 = BLOCK_STARTS[iz];
+    if (x0 === 7 && z0 === -33) continue;
+    // City.js renders this exact 26x26 paved slab beneath each ordinary block.
+    // Collision uses the same footprint so an apparently open courtyard is not
+    // an invisible wall just because it is outside a named road corridor.
+    VISIBLE_LOT_RECTS.push({ x: x0 + 13, z: z0 + 13, w: 26, d: 26 });
+    for (let n = 0; n < 3; n++) {
+      const x =
+          x0 +
+          4.5 +
+          n * 8.4 +
+          (n === 0 && ix % 2 === 0 ? 1 : n === 2 && ix % 2 === 1 ? -1 : 0),
+        w =
+          n === 0 && ix % 2 === 0
+            ? 5.4
+            : n === 2 && ix % 2 === 1
+              ? 5.1
+              : [7.4, 8.1, 7.1][n];
+      BUILDING_RECTS.push({ x, z: z0 + 7, w, d: 8.8 });
+      BUILDING_RECTS.push({ x, z: z0 + 19, w, d: 8.5 });
+    }
+  }
+BUILDING_RECTS.push(
+  { x: 11.2, z: -30, w: 3.6, d: 6 },
+  { x: 26.5, z: -25, w: 13, d: 16 },
+  { x: 11.2, z: -13.5, w: 3.6, d: 13 },
+  { x: -53, z: 52, w: 22, d: 20 },
+);
+
+function rectAt(rects, x, z, margin = 0) {
+  return rects.find(
+    (rect) =>
+      Math.abs(x - rect.x) < rect.w / 2 - margin &&
+      Math.abs(z - rect.z) < rect.d / 2 - margin,
+  );
+}
+
+export function buildingAt(x, z, margin = 0) {
+  return BUILDING_RECTS.find(
+    (rect) =>
+      Math.abs(x - rect.x) < rect.w / 2 + margin &&
+      Math.abs(z - rect.z) < rect.d / 2 + margin,
+  );
+}
+
+export function visibleLotAt(x, z, margin = 0) {
+  return rectAt(VISIBLE_LOT_RECTS, x, z, margin);
+}
+
 export function surface(x, z, margin = 0) {
   if (Math.abs(x) > EXTENT - margin || Math.abs(z) > EXTENT - margin)
     return "wall";
-  if (
-    AVENUES.some(
-      (v) =>
-        Math.abs(x - v) < ROAD_HALF - margin ||
-        Math.abs(z - v) < ROAD_HALF - margin,
-    )
-  )
-    return "road";
-  if (
+  if (buildingAt(x, z, margin)) return "wall";
+
+  const avenue = AVENUES.some(
+    (v) =>
+      Math.abs(x - v) < ROAD_HALF - margin ||
+      Math.abs(z - v) < ROAD_HALF - margin,
+  );
+  if (avenue) return "road";
+
+  const alley =
     Math.abs(x) < 73 &&
     Math.abs(z) < 73 &&
     ALLEYS.some(
       (v) =>
         Math.abs(x - v) < ALLEY_HALF - margin ||
         Math.abs(z - v) < ALLEY_HALF - margin,
+    );
+  if (alley) return "alley";
+  if (hiddenLaneAt(x, z, margin)) return "alley";
+
+  // The visible curb/sidewalk apron is traversable. It is intentionally slower
+  // only through player judgement for now; most importantly it is no longer an
+  // invisible collision wall next to open pavement.
+  if (
+    AVENUES.some(
+      (v) =>
+        Math.abs(x - v) < SIDEWALK_HALF - margin ||
+        Math.abs(z - v) < SIDEWALK_HALF - margin,
     )
   )
-    return "alley";
-  if (hiddenLaneAt(x, z, margin)) return "alley";
+    return "ground";
+  if (
+    Math.abs(x) < 75 &&
+    Math.abs(z) < 75 &&
+    ALLEYS.some(
+      (v) =>
+        Math.abs(x - v) < ALLEY_SHOULDER_HALF - margin ||
+        Math.abs(z - v) < ALLEY_SHOULDER_HALF - margin,
+    )
+  )
+    return "ground";
+
   return "wall";
 }
+
+// Collision truth is slightly broader than route semantics. `surface()` keeps
+// unnamed courtyards out of alley/road gameplay logic, while this query lets the
+// bike use the paved slabs the renderer visibly presents as open space.
+export function collisionSurface(x, z, margin = 0) {
+  const semantic = surface(x, z, margin);
+  if (semantic !== "wall") return semantic;
+  if (Math.abs(x) > EXTENT - margin || Math.abs(z) > EXTENT - margin)
+    return "wall";
+  if (buildingAt(x, z, margin)) return "wall";
+  if (visibleLotAt(x, z, margin)) return "ground";
+  return "wall";
+}
+
 export function district(x, z) {
   if (x > 62) return "BẾN GIÓ";
   if (x < -20 && z > 15) return "CHỢ AN HÒA";
@@ -81,59 +184,224 @@ export function district(x, z) {
   if (z > 20) return "CHUNG CƯ NẮNG";
   return "ĐẠI LỘ SÀI GÒN";
 }
-export function makeTraffic(rng, count) {
-  return Array.from({ length: count }, (_, id) => {
-    const row = Math.floor(rng() * 2),
-      col = Math.floor(rng() * 2);
-    const left = -72 + col * 72,
-      top = -72 + row * 72;
-    const direction = rng() > 0.3 ? 1 : -1;
+
+// Traffic Pass 2 keeps the proven junction timetable but removes the visual
+// conveyor-belt feel between intersections. Every NPC receives a seeded driver
+// profile: slightly different longitudinal rhythm and lane-centre preference.
+// The variation fades to zero around junction cores, so crossing times stay as
+// readable and deterministic as the previous stable-stream model.
+const TRAFFIC_STREAMS = AVENUES.length * 4;
+const TRAFFIC_MIN = -EXTENT + 2;
+const TRAFFIC_MAX = EXTENT - 2;
+const TRAFFIC_PERIOD = TRAFFIC_MAX - TRAFFIC_MIN;
+const TRAFFIC_SLOT_SPACING = TRAFFIC_PERIOD / 3;
+const TRAFFIC_SPEED = 6.25;
+const TRAFFIC_PHASES = [
+  12.52, 46.31, 32.33, 3.13, 38.46, 18.24, 32.34, 19.98, 17.5, 46.32, 2.98,
+  40.95,
+];
+
+function streamLayout(stream) {
+  const vertical = stream >= AVENUES.length * 2;
+  const local = vertical ? stream - AVENUES.length * 2 : stream;
+  const road = AVENUES[Math.floor(local / 2)];
+  const direction = local % 2 === 0 ? 1 : -1;
+  return {
+    axis: vertical ? "z" : "x",
+    road,
+    direction,
+    // Coordinates use +x east and +z north. Keep traffic on the right-hand
+    // side of its direction of travel: north/east use +x/-z respectively.
+    lane: vertical ? road + direction * 2.75 : road - direction * 2.75,
+  };
+}
+
+function vehicleShape(kind) {
+  if (kind === "car") return { halfWidth: 1.05, halfLength: 1.8 };
+  if (kind === "delivery") return { halfWidth: 0.58, halfLength: 1.28 };
+  return { halfWidth: 0.46, halfLength: 1.18 };
+}
+
+function wrap(value, period) {
+  return ((value % period) + period) % period;
+}
+
+function smoothstep01(value) {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
+}
+
+function junctionFreedom(coordinate) {
+  const distanceToJunction = Math.min(
+    ...AVENUES.map((road) => Math.abs(coordinate - road)),
+  );
+  // Freeze authored variation from 5.5 m around a junction centre, then blend
+  // it back over the next 10 m. This keeps the conflict core predictable while
+  // letting each driver develop a distinct rhythm over the long block.
+  return smoothstep01((distanceToJunction - 5.5) / 10);
+}
+
+function driverProfile(rng, kind) {
+  const bike = kind === "bike";
+  const delivery = kind === "delivery";
+  const paceScale = bike ? 1 : delivery ? 0.82 : 0.62;
+  const wanderScale = bike ? 1 : delivery ? 0.68 : 0.4;
+  return {
+    paceAmplitude: (0.55 + rng() * 0.65) * paceScale,
+    paceFrequency: 0.36 + rng() * 0.24,
+    pacePhase: rng() * Math.PI * 2,
+    laneBias: (rng() * 2 - 1) * 0.2 * wanderScale,
+    wanderAmplitude: (0.12 + rng() * 0.2) * wanderScale,
+    wanderFrequency: 0.2 + rng() * 0.22,
+    wanderPhase: rng() * Math.PI * 2,
+  };
+}
+
+export function makeTraffic(rng, regularCount, rushCount = 0) {
+  const total = regularCount + rushCount;
+  // A daily global rotation changes where the whole pattern starts without
+  // destroying the safe relative cadence between crossing streams.
+  const dailyShift = rng() * TRAFFIC_SLOT_SPACING;
+  const regularSlots = Math.ceil(regularCount / TRAFFIC_STREAMS);
+
+  return Array.from({ length: total }, (_, id) => {
+    const rushOnly = id >= regularCount;
+    const localId = rushOnly ? id - regularCount : id;
+    const stream = localId % TRAFFIC_STREAMS;
+    const localSlot = Math.floor(localId / TRAFFIC_STREAMS);
+    const slot = rushOnly ? regularSlots + localSlot : localSlot;
+    const layout = streamLayout(stream);
     const kind = id % 11 === 0 ? "car" : id % 7 === 0 ? "delivery" : "bike";
     return {
       id,
-      left,
-      top,
-      direction,
-      phase: rng() * 288,
-      speed: 5 + rng() * 6,
+      ...layout,
+      stream,
+      rushOnly,
+      phase: wrap(
+        TRAFFIC_PHASES[stream] + dailyShift + slot * TRAFFIC_SLOT_SPACING,
+        TRAFFIC_PERIOD,
+      ),
+      speed: TRAFFIC_SPEED,
       kind,
+      ...vehicleShape(kind),
+      ...driverProfile(rng, kind),
       x: 0,
       z: 0,
       angle: 0,
-      radius: kind === "car" ? 1.5 : 0.72,
       near: false,
       closest: Infinity,
       nearSide: 0,
       lastNear: -100,
+      honkedAt: -100,
       honkedUntil: 0,
-      active: true,
+      avoidOffset: 0,
+      spawnBlocked: false,
+      active: !rushOnly,
       colour: Math.floor(rng() * 5),
     };
   });
 }
+
+function legacyTrafficPose(vehicle, time, explicitLegacy = false) {
+  const lane = explicitLegacy
+    ? 2.8 * vehicle.direction
+    : (vehicle.lane ?? 2.8 * vehicle.direction);
+  const side = vehicle.sideLength ?? 72 - 2 * lane;
+  const period = vehicle.phasePeriod ?? side * 4;
+  const left = vehicle.left,
+    top = vehicle.top;
+  const a = { x: left + lane, z: top + lane },
+    b = { x: left + 72 - lane, z: top + lane },
+    c = { x: left + 72 - lane, z: top + 72 - lane },
+    d = { x: left + lane, z: top + 72 - lane };
+  const points = vehicle.direction > 0 ? [a, b, c, d, a] : [a, d, c, b, a];
+  const travel = wrap(vehicle.phase + time * vehicle.speed, period);
+  const segment = Math.min(3, Math.floor(travel / side));
+  const local = (travel - segment * side) / side;
+  const from = points[segment],
+    to = points[segment + 1];
+  vehicle.x = from.x + (to.x - from.x) * local;
+  vehicle.z = from.z + (to.z - from.z) * local;
+  vehicle.angle = Math.atan2(to.x - from.x, to.z - from.z);
+}
+
 export function trafficPose(vehicle, time) {
-  const p =
-    (((vehicle.phase + time * vehicle.speed * vehicle.direction) % 288) + 288) %
-    288;
-  const lane =
-    2.8 * vehicle.direction +
-    (vehicle.honkedUntil > time ? 1.2 * vehicle.direction : 0);
-  if (p < 72) {
-    vehicle.x = vehicle.left + p;
-    vehicle.z = vehicle.top + lane;
-    vehicle.angle = Math.PI / 2;
-  } else if (p < 144) {
-    vehicle.x = vehicle.left + 72 - lane;
-    vehicle.z = vehicle.top + p - 72;
-    vehicle.angle = 0;
-  } else if (p < 216) {
-    vehicle.x = vehicle.left + 216 - p;
-    vehicle.z = vehicle.top + 72 - lane;
-    vehicle.angle = -Math.PI / 2;
-  } else {
-    vehicle.x = vehicle.left + lane;
-    vehicle.z = vehicle.top + 288 - p;
-    vehicle.angle = Math.PI;
+  // Diagnostic fixtures predate straight streams and still hand-author left/top.
+  // Honour those explicit fixture fields even if the object was cloned from a
+  // modern traffic vehicle that also carries an axis/lane property.
+  const hasLegacyRoute =
+    Number.isFinite(vehicle.left) && Number.isFinite(vehicle.top);
+  if (hasLegacyRoute || !vehicle.axis)
+    legacyTrafficPose(vehicle, time, hasLegacyRoute);
+  else {
+    const travel =
+      TRAFFIC_MIN + wrap(vehicle.phase + time * vehicle.speed, TRAFFIC_PERIOD);
+    let coordinate = vehicle.direction > 0 ? travel : -travel;
+    let lateral = 0;
+
+    // A stopped diagnostic fixture must stay truly stopped. Normal traffic gets
+    // authored driver texture only between junctions. Longitudinal variation is
+    // measured in the forward direction, so a positive pulse means "a little
+    // ahead of timetable" regardless of the stream's world-axis direction.
+    if (vehicle.speed > 0 && Number.isFinite(vehicle.paceAmplitude)) {
+      const freedom = junctionFreedom(coordinate);
+      const speedScale = Math.min(
+        1,
+        Math.max(0, vehicle.speed / TRAFFIC_SPEED),
+      );
+      const pace =
+        Math.sin(time * vehicle.paceFrequency + vehicle.pacePhase) *
+        vehicle.paceAmplitude *
+        freedom *
+        speedScale;
+      coordinate += pace * vehicle.direction;
+      lateral =
+        (vehicle.laneBias +
+          Math.sin(time * vehicle.wanderFrequency + vehicle.wanderPhase) *
+            vehicle.wanderAmplitude) *
+        freedom *
+        speedScale;
+    }
+
+    if (vehicle.axis === "x") {
+      vehicle.x = coordinate;
+      vehicle.z = vehicle.lane + lateral;
+      vehicle.angle = vehicle.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+    } else {
+      vehicle.x = vehicle.lane + lateral;
+      vehicle.z = coordinate;
+      vehicle.angle = vehicle.direction > 0 ? 0 : Math.PI;
+    }
   }
-  if (vehicle.direction < 0) vehicle.angle += Math.PI;
+
+  // Horn response is a smooth temporary nudge inside the current road, not a lane teleport.
+  if (vehicle.honkedUntil > time && vehicle.honkedAt <= time) {
+    const duration = Math.max(0.001, vehicle.honkedUntil - vehicle.honkedAt);
+    const progress = Math.min(
+      1,
+      Math.max(0, (time - vehicle.honkedAt) / duration),
+    );
+    const nudge = Math.sin(progress * Math.PI) * 0.42;
+    vehicle.x += Math.cos(vehicle.angle) * nudge;
+    vehicle.z -= Math.sin(vehicle.angle) * nudge;
+  }
+}
+
+// Circle-vs-oriented-box clearance. Negative means the point lies inside the
+// traffic body's footprint. Derive the footprint from kind at collision time so
+// the visual vehicle class and the collision class cannot silently diverge.
+export function vehicleClearance(vehicle, point) {
+  const dx = point.x - vehicle.x,
+    dz = point.z - vehicle.z;
+  const sideX = Math.cos(vehicle.angle),
+    sideZ = -Math.sin(vehicle.angle),
+    forwardX = Math.sin(vehicle.angle),
+    forwardZ = Math.cos(vehicle.angle);
+  const lateral = dx * sideX + dz * sideZ,
+    longitudinal = dx * forwardX + dz * forwardZ;
+  const { halfWidth, halfLength } = vehicleShape(vehicle.kind);
+  const ox = Math.abs(lateral) - halfWidth,
+    oz = Math.abs(longitudinal) - halfLength;
+  if (ox <= 0 && oz <= 0) return Math.max(ox, oz);
+  return Math.hypot(Math.max(0, ox), Math.max(0, oz));
 }

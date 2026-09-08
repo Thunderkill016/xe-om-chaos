@@ -1,0 +1,402 @@
+:root {
+  --premium-glass: rgba(12, 17, 18, 0.72);
+  --premium-glass-soft: rgba(16, 24, 25, 0.5);
+  --premium-line: rgba(255, 255, 255, 0.14);
+  --premium-text: #f8f3e9;
+  --premium-muted: rgba(248, 243, 233, 0.7);
+  --premium-orange: #ff7a45;
+  --premium-green: #88d5a8;
+  --premium-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+}
+
+/* High-fidelity presentation layer. The 3D scene stays the hero; UI behaves like
+   a compact ride-hailing HUD instead of a poster covering the city. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 10, 11, 0.32) 0%,
+      transparent 34%,
+      transparent 72%,
+      rgba(5, 10, 11, 0.08) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 10, 0.13),
+      transparent 32%,
+      rgba(5, 9, 10, 0.16)
+    );
+}
+
+.vignette {
+  opacity: 0.44;
+  background: radial-gradient(
+    circle at 52% 45%,
+    transparent 48%,
+    rgba(5, 8, 9, 0.44) 100%
+  );
+}
+
+.topbar {
+  top: 20px;
+  left: 28px;
+  right: 28px;
+  z-index: 20;
+  align-items: flex-start;
+}
+
+.wordmark {
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
+}
+.wordmark small {
+  opacity: 0.7;
+  letter-spacing: 0.32em;
+}
+.top-actions {
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--premium-line);
+  border-radius: 14px;
+  background: rgba(14, 21, 22, 0.48);
+  box-shadow: var(--premium-shadow);
+  backdrop-filter: blur(16px) saturate(1.15);
+}
+.top-actions button,
+.date-stamp {
+  border-radius: 9px;
+}
+.date-stamp {
+  padding: 8px 12px;
+  color: var(--premium-text);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+}
+
+.welcome {
+  left: 38px;
+  top: 128px;
+  width: min(410px, calc(100vw - 76px));
+  max-width: 410px;
+  padding: 22px 24px 24px;
+  border: 1px solid var(--premium-line);
+  border-radius: 22px;
+  background: linear-gradient(
+    145deg,
+    rgba(10, 15, 16, 0.8),
+    rgba(12, 20, 20, 0.56)
+  );
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px) saturate(1.18);
+}
+.welcome .edition {
+  margin-bottom: 14px;
+  color: #ffe0c9;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+}
+.welcome h1 {
+  margin: 0 0 10px;
+  font-size: clamp(54px, 6.2vw, 86px);
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+  text-shadow: 0 8px 34px rgba(0, 0, 0, 0.22);
+}
+.welcome .city-stamp {
+  margin: 12px 0 16px;
+}
+.welcome .tagline {
+  max-width: 34em;
+  margin: 0 0 18px;
+  color: var(--premium-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.start-actions {
+  align-items: center;
+  gap: 12px;
+}
+.start-actions .primary,
+#results .primary,
+#pause-dialog .primary {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(255, 122, 69, 0.2);
+}
+.start-actions > span {
+  max-width: 150px;
+  color: var(--premium-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+.quick-controls,
+.welcome-best {
+  opacity: 0.76;
+}
+.postcard {
+  right: 40px;
+  bottom: 64px;
+  max-width: 420px;
+  transform: none;
+  opacity: 0.8;
+  text-shadow: 0 5px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Driving HUD */
+body.playing .topbar {
+  top: 16px;
+}
+body.playing .wordmark {
+  transform: scale(0.82);
+  transform-origin: top left;
+}
+#hud {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+.run-strip {
+  top: 20px;
+  left: 50%;
+  width: auto;
+  min-width: 340px;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  gap: 20px;
+  border: 1px solid var(--premium-line);
+  border-radius: 14px;
+  background: rgba(12, 18, 19, 0.56);
+  box-shadow: var(--premium-shadow);
+  backdrop-filter: blur(14px);
+}
+.run-strip > div {
+  min-width: 78px;
+}
+.run-strip small {
+  color: var(--premium-muted);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+.run-strip strong {
+  font-size: 19px;
+}
+
+.mission-stack {
+  top: 92px;
+  left: 28px;
+  width: min(350px, calc(100vw - 56px));
+}
+.mission-card {
+  padding: 16px 15px;
+  border: 1px solid var(--premium-line);
+  border-radius: 18px;
+  background: var(--premium-glass);
+  box-shadow: var(--premium-shadow);
+  backdrop-filter: blur(18px) saturate(1.15);
+}
+.mission-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+}
+.mission-copy small {
+  color: #ffc49f;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.mission-copy strong {
+  margin-top: 2px;
+  color: var(--premium-text);
+  font-size: 18px;
+}
+.mission-copy span {
+  color: var(--premium-muted);
+  line-height: 1.4;
+}
+.passenger-preference {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.chaos {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 166, 110, 0.2);
+  border-radius: 12px;
+  background: rgba(39, 24, 18, 0.64);
+  color: #ffd0b4;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18);
+}
+
+.map-panel {
+  left: 28px;
+  bottom: 28px;
+  padding: 10px;
+  border: 1px solid var(--premium-line);
+  border-radius: 50%;
+  background: rgba(10, 15, 17, 0.66);
+  box-shadow: var(--premium-shadow);
+  backdrop-filter: blur(12px);
+}
+#minimap {
+  width: 176px;
+  height: 176px;
+  border-radius: 50%;
+}
+.map-panel > span {
+  left: 50%;
+  bottom: -26px;
+  width: max-content;
+  max-width: 200px;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(10, 15, 17, 0.78);
+  color: var(--premium-text);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.speed-panel {
+  right: 28px;
+  bottom: 28px;
+  min-width: 150px;
+  padding: 18px 20px;
+  border: 1px solid var(--premium-line);
+  border-radius: 22px;
+  background: rgba(10, 15, 17, 0.66);
+  box-shadow: var(--premium-shadow);
+  backdrop-filter: blur(14px);
+}
+.speed-panel strong {
+  font-size: 54px;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+}
+.speed-panel > span {
+  color: var(--premium-muted);
+}
+.boost-track {
+  margin-top: 12px;
+  height: 4px;
+}
+.flow-panel {
+  right: 28px;
+  top: 90px;
+  width: 150px;
+  padding: 11px 13px;
+  border: 1px solid var(--premium-line);
+  border-radius: 14px;
+  background: rgba(10, 15, 17, 0.5);
+  backdrop-filter: blur(12px);
+}
+.reaction {
+  left: 50%;
+  bottom: 32px;
+  max-width: 430px;
+  transform: translateX(-50%);
+  padding: 11px 16px;
+  border-radius: 13px;
+  background: rgba(10, 15, 17, 0.62);
+  color: var(--premium-text);
+  box-shadow: var(--premium-shadow);
+  backdrop-filter: blur(12px);
+}
+.ride-hint {
+  left: 50%;
+  bottom: 84px;
+  max-width: min(560px, 70vw);
+  transform: translateX(-50%);
+  padding: 9px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(10, 15, 17, 0.55);
+  color: var(--premium-text);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+#settings,
+#pause-dialog,
+#results {
+  border: 1px solid var(--premium-line);
+  border-radius: 22px;
+  background: rgba(13, 19, 20, 0.9);
+  color: var(--premium-text);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(22px) saturate(1.15);
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    left: 14px;
+    right: 14px;
+    top: 12px;
+  }
+  .welcome {
+    left: 14px;
+    right: 14px;
+    top: auto;
+    bottom: 22px;
+    width: auto;
+    max-width: none;
+    padding: 18px;
+  }
+  .welcome h1 {
+    font-size: clamp(48px, 16vw, 72px);
+  }
+  .welcome .tagline {
+    font-size: 13px;
+  }
+  .postcard {
+    display: none;
+  }
+  .run-strip {
+    top: 62px;
+    min-width: 0;
+    width: calc(100vw - 28px);
+    justify-content: space-around;
+  }
+  .mission-stack {
+    left: 14px;
+    top: 114px;
+    width: calc(100vw - 28px);
+  }
+  .flow-panel {
+    display: none;
+  }
+  .map-panel {
+    left: 14px;
+    bottom: 128px;
+    padding: 7px;
+  }
+  #minimap {
+    width: 124px;
+    height: 124px;
+  }
+  .speed-panel {
+    right: 14px;
+    bottom: 128px;
+    min-width: 108px;
+    padding: 13px;
+  }
+  .speed-panel strong {
+    font-size: 42px;
+  }
+  .ride-hint {
+    bottom: 112px;
+    max-width: calc(100vw - 32px);
+    font-size: 11px;
+  }
+  .reaction {
+    bottom: 164px;
+    max-width: calc(100vw - 40px);
+  }
+}

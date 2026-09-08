@@ -1,13 +1,13 @@
 import { CONFIG, distance } from "./config.js";
-import { STOPS } from "../world/map.js";
+import { WORLD_STOPS as STOPS } from "../world/HcmCorridor.js";
 
 export const PASSENGERS = [
   {
     id: "office",
-    vi: "Dân văn phòng",
+    vi: "Khách công sở",
     en: "Office worker",
-    line: "Trễ họp rồi!",
-    subtitle: "Late for a meeting!",
+    line: "Anh chạy lẹ giúp em chút nha. Em sắp vô họp rồi, mà giờ này đường lại kẹt.",
+    subtitle: "Please tell me we can beat the traffic. I'm late for a meeting.",
     fare: 16000,
     deadline: 40,
     colour: "#eab76e",
@@ -15,9 +15,9 @@ export const PASSENGERS = [
   {
     id: "grandma",
     vi: "Cô Tư",
-    en: "Auntie Tư",
-    line: "Chậm thôi con!",
-    subtitle: "Easy on the throttle!",
+    en: "Cô Tư",
+    line: "Cô không gấp đâu con. Con chạy êm êm giùm cô là được rồi.",
+    subtitle: "Easy, kid. Nice and smooth for me, okay?",
     fare: 20000,
     deadline: 60,
     colour: "#b3c9b2",
@@ -25,19 +25,21 @@ export const PASSENGERS = [
   {
     id: "student",
     vi: "Sinh viên",
-    en: "The student",
-    line: "Em biết hẻm này!",
-    subtitle: "I know a shortcut!",
+    en: "Student",
+    line: "Em đi khu này hoài. Anh thấy hẻm nào thông thì quẹo vô nha, nhiều khi lẹ hơn đường lớn.",
+    subtitle:
+      "I know this part of town. If a hẻm goes through, take it — it's often quicker than the main road.",
     fare: 12000,
     deadline: 48,
     colour: "#81b8c5",
   },
   {
     id: "chaos",
-    vi: "Khách mê tốc độ",
-    en: "The thrill seeker",
-    line: "Đỉnh quá!",
-    subtitle: "What a ride!",
+    vi: "Khách khoái cảm giác mạnh",
+    en: "Thrill seeker",
+    line: "Em không ngại chạy nhanh đâu. Anh lách gọn thì em khoái, miễn đừng quẹt xe người ta nha.",
+    subtitle:
+      "Speed doesn't scare me. Just keep the close passes clean and don't hit anybody.",
     fare: 15000,
     deadline: 46,
     colour: "#e99880",
@@ -46,9 +48,12 @@ export const PASSENGERS = [
 export class Missions {
   constructor(rng) {
     this.sequence = Array.from({ length: 24 }, (_, i) => ({
-      passenger: i === 0 ? 0 : Math.floor(rng() * PASSENGERS.length),
-      // First trip exposes the authored shortcut; later trips use the full district.
-      destination: i === 0 ? 4 : (i + 1) % STOPS.length,
+      passenger: i <= 1 ? 0 : Math.floor(rng() * PASSENGERS.length),
+      // Trip one proves the authored hẻm. Trip two deliberately moves into the
+      // playable OpenStreetMap corridor before later trips resume the full pool.
+      pickup: i === 1 ? STOPS.length - 2 : null,
+      destination:
+        i === 0 ? 4 : i === 1 ? STOPS.length - 1 : (i + 1) % STOPS.length,
     }));
     this.index = 0;
     this.phase = "pickup";
@@ -114,15 +119,20 @@ export class Missions {
         run.moment("deadline", this.deadline);
       run.emit(
         "delivery",
-        this.deadline >= 0 ? "ĐẾN NƠI RỒI!" : "MUỘN MÀ VẪN TỚI!",
+        this.deadline >= 0
+          ? "Khách đã xuống xe ở điểm trả."
+          : "Cuốc bị trễ, nhưng khách đã xuống xe ở điểm trả.",
         fare,
       );
       const previous = this.destination;
       this.index = (this.index + 1) % this.sequence.length;
       const next = this.sequence[this.index];
       this.passenger = PASSENGERS[next.passenger];
-      this.pickup = STOPS[(next.destination + 4) % STOPS.length];
-      if (this.pickup === previous)
+      this.pickup =
+        next.pickup == null
+          ? STOPS[(next.destination + 4) % STOPS.length]
+          : STOPS[next.pickup];
+      if (this.pickup === previous && next.pickup == null)
         this.pickup = STOPS[(next.destination + 3) % STOPS.length];
       this.destination = STOPS[next.destination];
       this.phase = "pickup";

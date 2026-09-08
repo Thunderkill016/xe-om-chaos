@@ -1,11 +1,15 @@
 import { CONFIG, dailySeed, validSeed } from "./game/config.js";
 import { Run } from "./game/Run.js";
 import { Scene } from "./view/Scene.js";
+import { addDowntownCinematic } from "./view/Downtown.js";
+import { addRealHcmContext } from "./view/OsmContext.js";
+import { addPlayableHcmCorridor } from "./view/HcmCorridorView.js";
+import { installLegacyCorridorCarve } from "./view/CorridorCarve.js";
 import { Input } from "./platform/Input.js";
 import { Audio } from "./platform/Audio.js";
 import { UI, el } from "./platform/UI.js";
 import { bindShare } from "./platform/Share.js";
-import { trafficPose } from "./world/map.js";
+import { worldTrafficPose } from "./world/HcmCorridor.js";
 
 const params = new URLSearchParams(location.search);
 const requested = params.get("seed");
@@ -16,8 +20,8 @@ const ui = new UI(seed),
 if (params.has("v") && params.get("v") !== CONFIG.version) {
   el("start").disabled = true;
   el("welcome-best").textContent = ui.t(
-    "Mã thách đấu dùng phiên bản khác. Mở trang chủ để chạy hôm nay.",
-    "This challenge uses a different version. Open the home page for today’s run.",
+    "Mã thách đấu này thuộc bản game khác. Về trang chính để chạy cuốc hôm nay.",
+    "This challenge was made on a different game version. Head home for today’s run.",
   );
 }
 let run = new Run(seed),
@@ -28,12 +32,37 @@ let playing = false,
   previous = performance.now();
 let menuTime = 0;
 try {
-  view = new Scene(el("game"));
+  if (params.get("renderer") === "playcanvas") {
+    const [
+      { PlayCanvasScene },
+      { addAuthoredBaseMap },
+      { installPlayCanvasVehicleVisualPass },
+    ] = await Promise.all([
+      import("./view/PlayCanvasScene.js"),
+      import("./view/PlayCanvasBaseMap.js"),
+      import("./view/PlayCanvasVehicleVisualPass.js"),
+    ]);
+    installPlayCanvasVehicleVisualPass(PlayCanvasScene);
+    view = new PlayCanvasScene(el("game"));
+    addAuthoredBaseMap(view);
+    document.documentElement.dataset.renderer = "playcanvas";
+  } else {
+    const finishLegacyCarve = installLegacyCorridorCarve(Scene);
+    try {
+      view = new Scene(el("game"));
+    } finally {
+      if (view) finishLegacyCarve(view);
+    }
+    addDowntownCinematic(view);
+    addRealHcmContext(view);
+    addPlayableHcmCorridor(view);
+    document.documentElement.dataset.renderer = "three";
+  }
 } catch (error) {
   el("fatal").hidden = false;
   el("fatal").textContent = ui.t(
-    "Trình duyệt chưa mở được WebGL 2. Hãy bật tăng tốc phần cứng và tải lại.",
-    "WebGL 2 could not start. Enable hardware acceleration and reload.",
+    "Trình duyệt chưa khởi động được đồ họa 3D. Bật tăng tốc phần cứng rồi tải lại trang.",
+    "3D graphics could not start. Enable hardware acceleration, then reload the page.",
   );
   console.error(error);
 }
@@ -48,7 +77,6 @@ async function begin() {
   accumulator = 0;
   input.reset();
   ui.begin();
-  // Audio failure is surfaced independently; an unavailable audio device must not stop riding.
   try {
     await audio.start();
   } catch (error) {
@@ -89,13 +117,8 @@ el("settings").addEventListener("close", () => {
   input.reset();
   saveSettings();
 });
-el("language").onchange = () => {
-  ui.language = el("language").value;
-  ui.localize();
-};
 function saveSettings() {
   const prefs = {
-    language: ui.language,
     volume: Number(el("volume").value) / 100,
     quality: el("quality").value,
     motion: el("motion").checked,
@@ -149,19 +172,18 @@ el("game").addEventListener("webglcontextlost", (event) => {
   pause();
   el("fatal").hidden = false;
   el("fatal").textContent = ui.t(
-    "Đang khôi phục hình ảnh. Lượt chơi đã được tạm dừng.",
+    "Đang khôi phục hình ảnh. Cuốc xe đã được tạm dừng.",
     "Restoring graphics. Your run is paused.",
   );
 });
 el("game").addEventListener("webglcontextrestored", () => {
   el("fatal").hidden = true;
-  if (view) view.renderer.shadowMap.needsUpdate = true;
+  if (view?.renderer?.shadowMap) view.renderer.shadowMap.needsUpdate = true;
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) pause();
 });
 el("debug").hidden = !params.has("debug");
-// Mutable inspection hook only for explicit local debug sessions; local scores are unverified.
 if (params.has("debug"))
   Object.defineProperty(window, "xeom", {
     value: {
@@ -204,7 +226,7 @@ function frame(now) {
     menuTime += elapsed;
     for (const vehicle of run.traffic) {
       vehicle.active = vehicle.id < CONFIG.trafficCount;
-      trafficPose(vehicle, menuTime);
+      worldTrafficPose(vehicle, menuTime);
     }
   }
   if (view) {

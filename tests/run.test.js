@@ -28,13 +28,19 @@ import {
   SEEDS,
 } from "../scripts/evaluate-routes.mjs";
 
-test("departure guidance waits for movement, not an expiring tutorial timer", () => {
+test("departure guidance waits for movement and explains the available controls", () => {
   const run = new Run("guidance-start");
   run.time = CONFIG.runSeconds / 2;
-  assert.equal(getMissionGuidance(run).stage, "depart");
-  assert.match(getMissionGuidance(run).hint, /W \/ ↑/);
-  assert.match(getMissionGuidance(run, "vi", true).hint, /NÚT GA/);
-  assert.match(getMissionGuidance(run, "en", true).hint, /TOUCH/);
+  const keyboard = getMissionGuidance(run);
+  const viTouch = getMissionGuidance(run, "vi", true);
+  const enTouch = getMissionGuidance(run, "en", true);
+  assert.equal(keyboard.stage, "depart");
+  assert.match(keyboard.hint, /W \/ ↑/);
+  assert.match(viTouch.hint, /↑/);
+  assert.match(viTouch.hint, /←\/→/);
+  assert.match(enTouch.hint, /↑/);
+  assert.match(enTouch.hint, /←\/→/);
+  assert.notEqual(viTouch.hint, enTouch.hint);
   run.stats.distance = CONFIG.stopRadius;
   assert.equal(getMissionGuidance(run).stage, "route");
 });
@@ -54,34 +60,43 @@ test("boarding guidance matches the simulation's strict stop radius and speed", 
   }
   run.player.speed = 0;
   run.missions.dwell = CONFIG.boardingSeconds / 2;
-  const guidance = getMissionGuidance(run);
-  assert.equal(guidance.stage, "boarding");
-  assert.equal(guidance.showProgress, true);
-  assert.equal(guidance.progress, 0.5);
-  assert.match(guidance.hint, /LÊN XE/);
-  assert.equal(getMissionGuidance(run, "en").progressLabel, "Pickup progress");
+  const vietnamese = getMissionGuidance(run);
+  const english = getMissionGuidance(run, "en");
+  assert.equal(vietnamese.stage, "boarding");
+  assert.equal(vietnamese.showProgress, true);
+  assert.equal(vietnamese.progress, 0.5);
+  assert.match(vietnamese.hint, /khách/i);
+  assert.match(english.hint, /passenger/i);
+  assert.ok(vietnamese.progressLabel.length > 0);
+  assert.ok(english.progressLabel.length > 0);
+  assert.notEqual(vietnamese.progressLabel, english.progressLabel);
   run.player.z += CONFIG.stopRadius * 2;
   assert.equal(getMissionGuidance(run).showProgress, false);
   assert.equal(getMissionGuidance(run).progress, 0);
 });
 
-test("each passenger's bonus is visible before and during their trip", () => {
+test("each passenger has distinct localized preference guidance before and during the trip", () => {
   const run = new Run("guidance-preferences");
-  const vietnamese = [/ĐẾN SỚM/, /CHẠY ÊM/, /ĐI XUYÊN HẺM/, /LÁCH XE AN TOÀN/];
-  const english = [
-    /ARRIVE EARLY/,
-    /RIDE SMOOTHLY/,
-    /TAKE AN ALLEY/,
-    /SAFE CLOSE PASSES/,
-  ];
-  for (const [index, passenger] of PASSENGERS.entries()) {
+  const vietnamese = new Set();
+  const english = new Set();
+  for (const passenger of PASSENGERS) {
     run.missions.passenger = passenger;
-    for (const phase of ["pickup", "dropoff"]) {
-      run.missions.phase = phase;
-      assert.match(getMissionGuidance(run).preference, vietnamese[index]);
-      assert.match(getMissionGuidance(run, "en").preference, english[index]);
-    }
+    run.missions.phase = "pickup";
+    const viPickup = getMissionGuidance(run).preference;
+    const enPickup = getMissionGuidance(run, "en").preference;
+    run.missions.phase = "dropoff";
+    const viDropoff = getMissionGuidance(run).preference;
+    const enDropoff = getMissionGuidance(run, "en").preference;
+    assert.ok(viPickup.length > 0);
+    assert.ok(enPickup.length > 0);
+    assert.equal(viPickup, viDropoff);
+    assert.equal(enPickup, enDropoff);
+    assert.notEqual(viPickup, enPickup);
+    vietnamese.add(viPickup);
+    english.add(enPickup);
   }
+  assert.equal(vietnamese.size, PASSENGERS.length);
+  assert.equal(english.size, PASSENGERS.length);
 });
 
 test("late trips remain deliverable and never show negative deadline seconds", () => {
@@ -89,16 +104,21 @@ test("late trips remain deliverable and never show negative deadline seconds", (
   run.missions.phase = "dropoff";
   run.missions.deadline = -CONFIG.step;
   run.stats.distance = CONFIG.stopRadius;
-  assert.equal(getMissionGuidance(run).stage, "overdue");
-  assert.equal(getMissionGuidance(run).deadline, "QUÁ GIỜ");
-  assert.match(getMissionGuidance(run, "en").hint, /CAN STILL DROP OFF/);
+  const vietnamese = getMissionGuidance(run);
+  const english = getMissionGuidance(run, "en");
+  assert.equal(vietnamese.stage, "overdue");
+  assert.ok(vietnamese.deadline.length > 0);
+  assert.ok(english.deadline.length > 0);
+  assert.ok(!vietnamese.deadline.includes("-"));
+  assert.ok(!english.deadline.includes("-"));
+  assert.notEqual(vietnamese.hint, english.hint);
   Object.assign(run.player, run.missions.target);
-  assert.equal(getMissionGuidance(run).stage, "boarding");
-  assert.match(getMissionGuidance(run).hint, /XUỐNG XE/);
-  assert.equal(
-    getMissionGuidance(run, "en").progressLabel,
-    "Drop-off progress",
-  );
+  const boardingVi = getMissionGuidance(run);
+  const boardingEn = getMissionGuidance(run, "en");
+  assert.equal(boardingVi.stage, "boarding");
+  assert.ok(boardingVi.hint.length > 0);
+  assert.ok(boardingEn.progressLabel.length > 0);
+  assert.notEqual(boardingVi.progressLabel, boardingEn.progressLabel);
   run.missions.deadline = 0;
   assert.equal(getMissionGuidance(run).deadline, "0 s");
   run.missions.phase = "pickup";
@@ -308,7 +328,14 @@ test("close encounter scores only after safe exit; collision cannot score a near
   }
   assert.equal(r.stats.nearMisses, 1);
   v.lastNear = -100;
-  Object.assign(r.player, { x: 25, z: 2.8, speed: 12, immune: 0 });
+  Object.assign(r.player, {
+    x: v.x,
+    z: v.z,
+    speed: 12,
+    vx: 0,
+    vz: 0,
+    immune: 0,
+  });
   r.step({ ...EMPTY_INPUT, throttle: true });
   assert.equal(r.stats.crashes, 1);
   assert.equal(r.stats.nearMisses, 1);

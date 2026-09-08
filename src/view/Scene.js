@@ -4,6 +4,7 @@ import { colouredGeometry, vertexMaterial } from "./batch.js";
 import { buildCity } from "./City.js";
 import { Effects } from "./Effects.js";
 import { makeScooter, StreetLife } from "./Characters.js";
+import { MENU_CAMERA, resolveCameraPosition } from "./CameraRig.js";
 
 export class Scene {
   constructor(canvas) {
@@ -15,18 +16,19 @@ export class Scene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.08;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.shadowMap.autoUpdate = false;
     this.shadowTile = "";
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xb2cfca);
-    this.scene.fog = new THREE.Fog(0xb2cfca, 110, 290);
-    this.camera = new THREE.PerspectiveCamera(49, 1, 0.2, 400);
-    this.scene.add(new THREE.HemisphereLight(0xc9e3f1, 0x68717c, 1.5));
-    this.sun = new THREE.DirectionalLight(0xffdab0, 3);
-    this.sun.position.set(-50, 90, -30);
+    this.scene.background = new THREE.Color(0xc8d1d0);
+    this.scene.fog = new THREE.FogExp2(0xbfc9c5, 0.0046);
+    this.camera = new THREE.PerspectiveCamera(50, 1, 0.2, 400);
+    this.scene.add(new THREE.HemisphereLight(0xdde7ff, 0x665244, 1.55));
+    this.scene.add(new THREE.AmbientLight(0xffe8d2, 0.2));
+    this.sun = new THREE.DirectionalLight(0xffbd78, 4.1);
+    this.sun.position.set(-58, 72, -34);
     this.scene.add(this.sun);
     this.scene.add(this.sun.target);
     this.sun.castShadow = true;
@@ -132,8 +134,16 @@ export class Scene {
       new THREE.MeshBasicMaterial({ color: 0xffcd6d }),
     );
     this.scene.add(this.pin);
-    this.camera.position.set(-115, 92, -118);
-    this.camera.lookAt(0, 0, 5);
+    this.camera.position.set(
+      MENU_CAMERA.position.x,
+      MENU_CAMERA.position.y,
+      MENU_CAMERA.position.z,
+    );
+    this.camera.lookAt(
+      MENU_CAMERA.target.x,
+      MENU_CAMERA.target.y,
+      MENU_CAMERA.target.z,
+    );
     this.resize();
     window.addEventListener("resize", () => this.resize());
   }
@@ -141,7 +151,12 @@ export class Scene {
     if (!this.materials.has(colour))
       this.materials.set(
         colour,
-        new THREE.MeshLambertMaterial({ color: colour, flatShading: true }),
+        new THREE.MeshStandardMaterial({
+          color: colour,
+          roughness: 0.72,
+          metalness: 0.025,
+          flatShading: false,
+        }),
       );
     return this.materials.get(colour);
   }
@@ -255,31 +270,52 @@ export class Scene {
     this.marker.material.color.setHex(markerColour);
     this.pin.material.color.setHex(markerColour);
     if (playing) {
-      const followDistance = 12 + p.speed * 0.18;
+      // Keep the rider visible at low speed, then grow anticipation distance as
+      // speed rises. The camera position itself is clipped against every visual
+      // building footprint so rendered facades cannot swallow the chase camera.
+      const speedRatio = Math.min(p.speed / CONFIG.boostSpeed, 1);
+      const followDistance = 8.9 + speedRatio * 1.9;
+      const cameraHeight = 4.9 + speedRatio * 0.8;
       this.desired.set(
         p.x - Math.sin(p.angle) * followDistance,
-        8.5 + p.speed * 0.08,
+        cameraHeight,
         p.z - Math.cos(p.angle) * followDistance,
       );
-      const blend = 1 - Math.exp(-dt * 5);
+      const resolvedCamera = resolveCameraPosition(
+        { x: p.x, z: p.z },
+        { x: this.desired.x, z: this.desired.z },
+        this.buildingFootprints,
+      );
+      this.desired.x = resolvedCamera.x;
+      this.desired.z = resolvedCamera.z;
+      const blend = 1 - Math.exp(-dt * 6);
       this.camera.position.lerp(this.desired, blend);
+      const lookAhead = 4 + speedRatio * 17;
       this.lookAt.set(
-        p.x + Math.sin(p.angle) * 7,
+        p.x + Math.sin(p.angle) * lookAhead,
         1,
-        p.z + Math.cos(p.angle) * 7,
+        p.z + Math.cos(p.angle) * lookAhead,
       );
       this.camera.lookAt(this.lookAt);
       const fov = this.reducedMotion
         ? 52
-        : 49 + p.speed * 0.24 + (p.boosting ? 3 : 0);
+        : 54 + speedRatio * 8 + (p.boosting ? 2 : 0);
       this.camera.fov += (fov - this.camera.fov) * blend;
       this.camera.updateProjectionMatrix();
       if (!this.reducedMotion && p.recovery > 0) {
         this.camera.position.x += Math.sin(run.time * 65) * p.recovery * 0.18;
       }
     } else {
-      this.camera.position.set(-105, 87, -115);
-      this.camera.lookAt(8, 0, 8);
+      this.camera.position.set(
+        MENU_CAMERA.position.x,
+        MENU_CAMERA.position.y,
+        MENU_CAMERA.position.z,
+      );
+      this.camera.lookAt(
+        MENU_CAMERA.target.x,
+        MENU_CAMERA.target.y,
+        MENU_CAMERA.target.z,
+      );
     }
     this.frameMs = this.frameMs * 0.95 + measuredDt * 1000 * 0.05;
     this.fps = 1000 / this.frameMs;

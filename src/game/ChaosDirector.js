@@ -1,47 +1,47 @@
-import { random, distance, CONFIG } from "./config.js";
+import { random, distance, clamp, CONFIG } from "./config.js";
 
 export const CHAOS = [
   {
     id: "rain",
     start: 18,
     duration: 38,
-    vi: "MƯA RỒI! · ĐƯỜNG TRƠN",
-    en: "DOWNPOUR · LESS GRIP",
+    vi: "Mưa Sài Gòn ập xuống rồi. Mặt đường bắt đầu trơn, chạy chậm lại chút.",
+    en: "Here comes the rain. The road's getting slick.",
   },
   {
     id: "rush",
     start: 39,
     duration: 50,
-    vi: "GIỜ CAO ĐIỂM · GIỮ KHOẢNG CÁCH",
-    en: "RUSH HOUR · FIND THE GAPS",
+    vi: "Giờ tan tầm tới rồi. Xe đang dồn ra đường lớn, chừa khoảng trống mà đi.",
+    en: "Rush hour just kicked in. Traffic's thickening up.",
   },
   {
     id: "potholes",
     start: 60,
     duration: 34,
-    vi: "Ổ GÀ PHÍA TRƯỚC · NHẢ GA",
-    en: "POTHOLES · EASE OFF",
+    vi: "Đoạn đường phía trước ổ gà nhiều. Nhả ga chút cho xe đỡ dằn.",
+    en: "Rough stretch ahead. Ease off the throttle.",
   },
   {
     id: "block",
     start: 87,
     duration: 43,
-    vi: "ĐƯỜNG BỊ CHẮN · THỬ LỐI HẺM",
-    en: "ROAD BLOCKED · TRY THE HẺM",
+    vi: "Phía trước có rào chắn. Hẻm bên cạnh vẫn thông.",
+    en: "Road's blocked ahead. There's a hẻm off to the side.",
   },
   {
     id: "bus",
     start: 112,
     duration: 24,
-    vi: "XE BUÝT QUA NGÃ TƯ!",
-    en: "BUS CROSSING THE JUNCTION!",
+    vi: "Xe buýt đang cắt ngang ngã tư. Coi chừng đầu xe.",
+    en: "Bus coming across the junction. Watch it!",
   },
   {
     id: "flood",
     start: 139,
     duration: 40,
-    vi: "NGẬP BẾN GIÓ · ĐI CHẬM LẠI",
-    en: "CANAL ROAD FLOODED · SLOW DOWN",
+    vi: "Đường Bến Gió đang ngập. Nước sâu hơn bình thường, chạy chậm lại.",
+    en: "Bến Gió's flooded. Take it easy through there.",
   },
 ];
 export class ChaosDirector {
@@ -105,14 +105,51 @@ export class ChaosDirector {
           p.bounce = 0.85;
           p.speed *= 0.65;
           this.lastPothole = run.time;
-          run.emit("pothole", "ỐI! / BUMP!");
+          run.emit("pothole", "Bánh xe vừa dính ổ gà.");
           run.moment("airtime", 0.85);
           break;
         }
     }
     const wanted = this.active.has("block");
+    const trafficClear = !run.traffic.some(
+      (vehicle) =>
+        vehicle.active &&
+        vehicle.axis === "z" &&
+        vehicle.road === this.barrier.x &&
+        Math.abs(vehicle.z - this.barrier.z) < 12,
+    );
+    // Do not materialize a roadblock under the rider or through an NPC. Once a
+    // clean gap arrives, central traffic has enough approach distance to bend
+    // around the outside edges rather than ghosting through the barrier.
     this.barrier.active =
-      wanted && (this.barrier.active || distance(p, this.barrier) > 9);
+      wanted &&
+      (this.barrier.active || (distance(p, this.barrier) > 9 && trafficClear));
+
+    // The roadblock sits across both lanes of the central north/south avenue.
+    // Preserve longitudinal cadence and move each direction toward its own curb;
+    // this avoids introducing braking queues that would destroy junction timing.
+    for (const vehicle of run.traffic) {
+      if (vehicle.axis !== "z" || vehicle.road !== this.barrier.x) continue;
+      const baseLane = vehicle.road + vehicle.direction * 2.75;
+      let targetLane = baseLane;
+      if (this.barrier.active) {
+        const toBarrier = (this.barrier.z - vehicle.z) * vehicle.direction;
+        if (toBarrier < 18 && toBarrier > -10) {
+          const approach = clamp((18 - toBarrier) / 8, 0, 1),
+            departure = clamp((toBarrier + 10) / 6, 0, 1),
+            envelope = Math.min(approach, departure),
+            clearance =
+              this.barrier.w / 2 +
+              (vehicle.halfWidth ?? 0.5) +
+              0.45 -
+              Math.abs(baseLane - this.barrier.x);
+          targetLane += vehicle.direction * Math.max(0, clearance) * envelope;
+        }
+      }
+      vehicle.lane +=
+        (targetLane - vehicle.lane) * Math.min(1, CONFIG.step * 8);
+    }
+
     const busEvent = this.schedule.find((e) => e.id === "bus");
     if (!busEvent) throw new Error("Chaos schedule requires a bus event");
     this.bus.active = this.active.has("bus");
