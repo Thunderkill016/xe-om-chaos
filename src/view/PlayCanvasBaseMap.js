@@ -114,18 +114,10 @@ function facadeBox(
   const entity = view.box(name, hex, 1, height, 1);
   if (facade.axis === "z") {
     entity.setLocalScale(span, height, depth);
-    entity.setLocalPosition(
-      along,
-      y,
-      facade.side * (facade.wall + outward),
-    );
+    entity.setLocalPosition(along, y, facade.side * (facade.wall + outward));
   } else {
     entity.setLocalScale(depth, height, span);
-    entity.setLocalPosition(
-      facade.side * (facade.wall + outward),
-      y,
-      along,
-    );
+    entity.setLocalPosition(facade.side * (facade.wall + outward), y, along);
   }
   building.addChild(entity);
   return entity;
@@ -196,12 +188,12 @@ function addStreetMarkings(view, root) {
 function addSaigonFacade(view, building, rect, height, seed) {
   const facade = streetFacade(rect);
   const span = Math.max(2.4, facade.span);
-  const accent = SIGN_PALETTE[
-    Math.floor(hash01(seed + ":sign") * SIGN_PALETTE.length)
-  ];
-  const awning = AWNING_PALETTE[
-    Math.floor(hash01(seed + ":awning") * AWNING_PALETTE.length)
-  ];
+  const accent =
+    SIGN_PALETTE[Math.floor(hash01(seed + ":sign") * SIGN_PALETTE.length)];
+  const awning =
+    AWNING_PALETTE[
+      Math.floor(hash01(seed + ":awning") * AWNING_PALETTE.length)
+    ];
   const frontage = Math.max(1.9, span * 0.8);
 
   facadeBox(
