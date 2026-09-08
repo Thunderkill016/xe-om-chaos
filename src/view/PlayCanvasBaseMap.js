@@ -18,6 +18,8 @@ const DEG = 180 / Math.PI;
 const BUILDING_PALETTE = [
   0xd8c6a3, 0xc98e72, 0x95a69b, 0xe0d2b7, 0x839da1, 0xc77863,
 ];
+const SIGN_PALETTE = [0xb64f36, 0x315f61, 0xd29a4f, 0x6d7d61, 0x9f5546];
+const AWNING_PALETTE = [0xd28c55, 0x6f8a72, 0xb85e47, 0xc0a068];
 
 function hash01(value) {
   let hash = 2166136261;
@@ -60,6 +62,73 @@ function overlapsRealCorridor(rect) {
     realCorridorDistance(rect.x, rect.z) <
     REAL_HCM_CORRIDOR.shoulderWidth * 0.5 + radius + 1.5
   );
+}
+
+function nearestAvenue(value) {
+  let nearest = AVENUES[0];
+  let distance = Math.abs(value - nearest);
+  for (const avenue of AVENUES.slice(1)) {
+    const candidate = Math.abs(value - avenue);
+    if (candidate < distance) {
+      nearest = avenue;
+      distance = candidate;
+    }
+  }
+  return { value: nearest, distance };
+}
+
+function streetFacade(rect) {
+  const xRoad = nearestAvenue(rect.x);
+  const zRoad = nearestAvenue(rect.z);
+  const xGap = Math.max(0, xRoad.distance - rect.w * 0.5);
+  const zGap = Math.max(0, zRoad.distance - rect.d * 0.5);
+  if (xGap < zGap) {
+    return {
+      axis: "x",
+      side: Math.sign(xRoad.value - rect.x) || 1,
+      span: rect.d,
+      wall: rect.w * 0.5,
+    };
+  }
+  return {
+    axis: "z",
+    side: Math.sign(zRoad.value - rect.z) || 1,
+    span: rect.w,
+    wall: rect.d * 0.5,
+  };
+}
+
+function facadeBox(
+  view,
+  building,
+  facade,
+  name,
+  hex,
+  along,
+  y,
+  outward,
+  span,
+  height,
+  depth,
+) {
+  const entity = view.box(name, hex, 1, height, 1);
+  if (facade.axis === "z") {
+    entity.setLocalScale(span, height, depth);
+    entity.setLocalPosition(
+      along,
+      y,
+      facade.side * (facade.wall + outward),
+    );
+  } else {
+    entity.setLocalScale(depth, height, span);
+    entity.setLocalPosition(
+      facade.side * (facade.wall + outward),
+      y,
+      along,
+    );
+  }
+  building.addChild(entity);
+  return entity;
 }
 
 function addStreetMarkings(view, root) {
@@ -124,6 +193,161 @@ function addStreetMarkings(view, root) {
       }
 }
 
+function addSaigonFacade(view, building, rect, height, seed) {
+  const facade = streetFacade(rect);
+  const span = Math.max(2.4, facade.span);
+  const accent = SIGN_PALETTE[
+    Math.floor(hash01(seed + ":sign") * SIGN_PALETTE.length)
+  ];
+  const awning = AWNING_PALETTE[
+    Math.floor(hash01(seed + ":awning") * AWNING_PALETTE.length)
+  ];
+  const frontage = Math.max(1.9, span * 0.8);
+
+  facadeBox(
+    view,
+    building,
+    facade,
+    "SAIGON_SHOP_GLASS",
+    0x31585d,
+    0,
+    1.35,
+    0.06,
+    frontage,
+    2.2,
+    0.12,
+  );
+  facadeBox(
+    view,
+    building,
+    facade,
+    "SAIGON_ROLLING_SHUTTER",
+    0x56615f,
+    -frontage * 0.32,
+    1.35,
+    0.075,
+    frontage * 0.3,
+    2.15,
+    0.13,
+  );
+  facadeBox(
+    view,
+    building,
+    facade,
+    "SAIGON_SHOP_SIGN",
+    accent,
+    0,
+    3.08,
+    0.11,
+    Math.max(2.1, span * 0.74),
+    0.64,
+    0.18,
+  );
+  facadeBox(
+    view,
+    building,
+    facade,
+    "SAIGON_AWNING",
+    awning,
+    0,
+    2.62,
+    0.48,
+    Math.max(2, span * 0.7),
+    0.12,
+    0.95,
+  );
+
+  let floor = 0;
+  for (let y = 4.45; y < height - 0.85; y += 2.6, floor++) {
+    const balcony = hash01(`${seed}:balcony:${floor}`) > 0.26;
+    if (balcony) {
+      facadeBox(
+        view,
+        building,
+        facade,
+        "SAIGON_BALCONY_SLAB",
+        0xc9b89a,
+        0,
+        y - 0.72,
+        0.42,
+        Math.max(2, span * 0.68),
+        0.12,
+        0.9,
+      );
+      facadeBox(
+        view,
+        building,
+        facade,
+        "SAIGON_BALCONY_RAIL",
+        0x3e5554,
+        0,
+        y - 0.2,
+        0.83,
+        Math.max(1.8, span * 0.64),
+        0.08,
+        0.08,
+      );
+      for (const offset of [-0.28, 0, 0.28]) {
+        facadeBox(
+          view,
+          building,
+          facade,
+          "SAIGON_BALCONY_BAR",
+          0x3e5554,
+          offset * span,
+          y - 0.45,
+          0.83,
+          0.045,
+          0.58,
+          0.045,
+        );
+      }
+    }
+
+    const windowSpan = Math.max(1.45, span * 0.55);
+    facadeBox(
+      view,
+      building,
+      facade,
+      "SAIGON_UPPER_WINDOW",
+      floor % 2 ? 0x52757a : 0x6d8b8d,
+      0,
+      y,
+      0.07,
+      windowSpan,
+      0.86,
+      0.11,
+    );
+
+    if ((floor + Math.floor(hash01(seed) * 3)) % 2 === 0) {
+      facadeBox(
+        view,
+        building,
+        facade,
+        "SAIGON_AC_UNIT",
+        0xbfc2b6,
+        span * 0.31,
+        y + 0.42,
+        0.22,
+        Math.min(0.72, span * 0.15),
+        0.45,
+        0.32,
+      );
+    }
+  }
+
+  if (hash01(seed + ":tank") > 0.46) {
+    const tank = view.primitive(
+      "SAIGON_ROOF_WATER_TANK",
+      "cylinder",
+      0x5a6d68,
+      [0.55, 0.7, 0.55],
+    );
+    tank.setLocalPosition(span * 0.2, height + 0.72, 0);
+    building.addChild(tank);
+  }
+}
+
 function addBuildings(view, root) {
   for (let index = 0; index < BUILDING_RECTS.length; index++) {
     const rect = BUILDING_RECTS[index];
@@ -158,34 +382,7 @@ function addBuildings(view, root) {
     roof.setLocalPosition(0, height + 0.11, 0);
     building.addChild(roof);
 
-    const faceZ = rect.z < 0 ? rect.d * 0.5 + 0.055 : -rect.d * 0.5 - 0.055;
-    const glass = view.box(
-      "BASE_SHOPFRONT",
-      0x42666a,
-      Math.max(1.8, rect.w * 0.72),
-      2.05,
-      0.11,
-      0.4,
-      0.02,
-    );
-    glass.setLocalPosition(0, 1.35, faceZ);
-    building.addChild(glass);
-
-    if (height > 8) {
-      for (let y = 4.3; y < height - 1; y += 2.6) {
-        const windows = view.box(
-          "BASE_WINDOWS",
-          0x78989b,
-          Math.max(1.6, rect.w * 0.56),
-          0.55,
-          0.1,
-          0.46,
-          0.01,
-        );
-        windows.setLocalPosition(0, y, faceZ);
-        building.addChild(windows);
-      }
-    }
+    addSaigonFacade(view, building, rect, height, seed);
   }
 }
 
